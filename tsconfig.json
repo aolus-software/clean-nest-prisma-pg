@@ -24,8 +24,11 @@
 		"paths": {
 			"@common": ["libs/common/src"],
 			"@common/*": ["libs/common/src/*"],
+			"@repositories": ["libs/repositories/src"],
+			"@repositories/*": ["libs/repositories/src/*"],
 			"@utils": ["libs/utils/src"],
-			"@utils/*": ["libs/utils/src/*"]
+			"@utils/*": ["libs/utils/src/*"],
+			"@generated/*": ["generated/*"]
 		}
 	}
 }

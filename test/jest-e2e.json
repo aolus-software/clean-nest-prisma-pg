@@ -1,13 +1,18 @@
 {
-	"moduleFileExtensions": ["js", "json", "ts"],
-	"rootDir": ".",
-	"testEnvironment": "node",
-	"testRegex": ".e2e-spec.ts$",
-	"transform": {
-		"^.+\\.(t|j)s$": "ts-jest"
-	},
-	"moduleNameMapper": {
-		"^@common(|/.*)$": "<rootDir>/../libs/common/src/$1",
-		"^@utils(|/.*)$": "<rootDir>/../libs/utils/src/$1"
-	}
+  "moduleFileExtensions": [
+    "js",
+    "json",
+    "ts"
+  ],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": ".e2e-spec.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^@common(|/.*)$": "<rootDir>/../libs/common/src/$1",
+    "^@repositories/repositories(|/.*)$": "<rootDir>/../libs/repositories/src/$1",
+    "^@utils(|/.*)$": "<rootDir>/../libs/utils/src/$1"
+  }
 }
