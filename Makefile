@@ -116,7 +116,7 @@ db-studio:
 # ===========================
 deploy-prep:
 	@echo "Preparing for deployment..."
-	npm install
+	npm ci
 	npx prisma migrate deploy
 	npx prisma generate
 	npm run build
