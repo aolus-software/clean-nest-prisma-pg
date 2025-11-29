@@ -3,10 +3,14 @@ import { MailService } from "./mail.service";
 import { MailerModule } from "@nestjs-modules/mailer";
 import { HandlebarsAdapter } from "@nestjs-modules/mailer/dist/adapters/handlebars.adapter";
 import { BullModule } from "@nestjs/bullmq";
+import { join } from "path";
+import { ConfigModule } from "@nestjs/config";
+import { MailProcessor } from "./mail.processor";
 
 @Module({
-	providers: [MailService],
+	providers: [MailService, MailProcessor],
 	imports: [
+		ConfigModule.forRoot(),
 		MailerModule.forRootAsync({
 			useFactory: () => ({
 				transport: {
@@ -23,7 +27,14 @@ import { BullModule } from "@nestjs/bullmq";
 				},
 
 				template: {
-					dir: process.cwd() + "/mails/",
+					dir: join(
+						process.cwd(),
+						"libs",
+						"common",
+						"src",
+						"mail",
+						"templates",
+					),
 					adapter: new HandlebarsAdapter(),
 					options: {
 						strict: true,

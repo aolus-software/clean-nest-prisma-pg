@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
   moduleFormat = "cjs"
 }
 
@@ -19,12 +18,43 @@ model User {
   email     String   @db.VarChar(255)
   name      String   @db.VarChar(255)
   password  String   @db.VarChar(255)
+  emailVerifiedAt DateTime?
   deletedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([email], name: "idx_user_email")
   @@index([deletedAt], name: "idx_user_deleted_at")
+
+  roles UserRole[]
+  emailVerifications EmailVerification[]
+  resetPasswords ResetPassword[]
+}
+
+model EmailVerification {
+  id        String       @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  token      String   @db.VarChar(255)
+  expiresAt DateTime
+  usedAt   DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([token, usedAt])
+  user User @relation(fields: [userId], references: [id])
+}
+
+model ResetPassword {
+  id        String       @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  token      String   @db.VarChar(255)
+  expiresAt DateTime
+  usedAt   DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([token, usedAt])
+  user User @relation(fields: [userId], references: [id])
 }
 
 model Role {
@@ -32,8 +62,10 @@ model Role {
   name      String   @unique @db.VarChar(255)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
 
+  users       UserRole[]
+  permissions RolePermission[]
+}
 
 model Permission {
   id        String       @id @default(uuid()) @db.Uuid
@@ -41,6 +73,8 @@ model Permission {
   group    String    @db.VarChar(255)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  roles RolePermission[]
 }
 
 model UserRole {
@@ -51,6 +85,9 @@ model UserRole {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, roleId], name: "idx_user_role_unique")
+
+  user User @relation(fields: [userId], references: [id])
+  role Role @relation(fields: [roleId], references: [id])
 }
 
 model RolePermission {
@@ -61,4 +98,6 @@ model RolePermission {
   updatedAt    DateTime @updatedAt
 
   @@unique([roleId, permissionId], name: "idx_role_permission_unique")
+  role       Role       @relation(fields: [roleId], references: [id])
+  permission Permission @relation(fields: [permissionId], references: [id])
 }

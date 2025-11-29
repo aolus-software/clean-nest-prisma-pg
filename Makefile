@@ -97,11 +97,15 @@ db-migrate:
 
 db-migrate-dev:
 	@echo "Running database migrations in development..."
-	npx prisma migrate dev
+	npx prisma migrate dev && npx prisma generate
 
 db-seed:
 	@echo "Running database seeder..."
 	npm run seed
+
+db-reset:
+	@echo "Resetting the database..."
+	npx prisma migrate reset --force && npm run seed
 
 db-studio:
 	@echo "Starting Prisma Studio..."

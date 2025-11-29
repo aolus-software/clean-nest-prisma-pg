@@ -29,6 +29,7 @@
 			"@utils": ["libs/utils/src"],
 			"@utils/*": ["libs/utils/src/*"],
 			"@generated/*": ["generated/*"]
-		}
+		},
+		"typeRoots": ["./node_modules/@types", "./libs/common/src/types"]
 	}
 }

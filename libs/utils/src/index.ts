@@ -13,3 +13,4 @@ export * from "./hash/hash.utils";
 export * from "./logger/logger.utils";
 export * from "./number/number.utils";
 export * from "./string/str.utils";
+export * from "./jwt/jwt.utils";

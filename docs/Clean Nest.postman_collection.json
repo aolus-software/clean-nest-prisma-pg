@@ -1,0 +1,342 @@
+{
+	"info": {
+		"_postman_id": "d9fe8754-55b4-4785-a6e8-7bcde16acdef",
+		"name": "Clean Nest",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "37905159",
+		"_collection_link": "https://universal-space-603612.postman.co/workspace/zul-superfk~9b40ee4e-4416-4980-8ce1-8aba9ebdce41/collection/37905159-d9fe8754-55b4-4785-a6e8-7bcde16acdef?action=share&source=collection_link&creator=37905159"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login & Profile",
+					"item": [
+						{
+							"name": "Login",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{secret_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\": \"admin@example.com\",\r\n    \"password\": \"S3crEtP4ssw0rd!\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/auth/login",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"auth",
+										"login"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Profile",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/auth/profile",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"auth",
+										"profile"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Register",
+					"item": [
+						{
+							"name": "Register",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{secret_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"my name\",\r\n    \"email\": \"admin+4@example.com\",\r\n    \"password\": \"S3crEtP4ssw0rd!\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/auth/register",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"auth",
+										"register"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Resend Verification Email",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{secret_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\": \"admin+4@example.com\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/auth/resend-verification-email",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"auth",
+										"resend-verification-email"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Verify Email",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{secret_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"token\": \"k7SpYmC4Yc0G3XEyH4TMohyECwO1n1QqnxZVwoZeguc76sTDyROisnr6tR7xn0UQxpp6IRDgJTx3kkw2XQbeieJ7qFKk91WC5bDykGZ6kFVv92obLMCZ8kNMelSOMDtCfPLWKFFiRO6yq8rO6OyRBwctScoM0LT0f7D8Cu0oVKd2px5zsnfDKEecG4QjGHm1YCzQMhdXoKIeUdJzJvE8Dnkb2dD3y1aOHpWikFPifs1DGFm8KK3IIxjJPuKG1gO\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/auth/verify-email",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"auth",
+										"verify-email"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Forgot Password",
+					"item": [
+						{
+							"name": "Forgot Password",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{secret_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\": \"admin+4@example.com\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "text"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/auth/forgot-password",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"auth",
+										"forgot-password"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Validate Reset Token",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{secret_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"token\": \"DsypZx9wy07p8cTXtqsu75GN1sSwMr7bxGK79sw1I794rg5GNr8qhAEc0UaCisuAimMG29TJHfkD9dZto2SwqaYaFzJMKSv2IewHDD2IhiUOQViQwgzTa18ByBcOwFhZ2hHtOutbLtWDBoxJnkWZnxcr9q27qgb26MOXeTjH5WRCOGgXdpJrPsdNXGDkjegadd9ixOTnkDMJRDiRfprqo36PbTuucHDwYq61VhmZ1c2sHAGQLVlOJ2LoGGqV66Q\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/auth/validate-reset-password-token",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"auth",
+										"validate-reset-password-token"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Reset Password",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{secret_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"token\": \"DsypZx9wy07p8cTXtqsu75GN1sSwMr7bxGK79sw1I794rg5GNr8qhAEc0UaCisuAimMG29TJHfkD9dZto2SwqaYaFzJMKSv2IewHDD2IhiUOQViQwgzTa18ByBcOwFhZ2hHtOutbLtWDBoxJnkWZnxcr9q27qgb26MOXeTjH5WRCOGgXdpJrPsdNXGDkjegadd9ixOTnkDMJRDiRfprqo36PbTuucHDwYq61VhmZ1c2sHAGQLVlOJ2LoGGqV66Q\",\r\n    \"password\": \"Password123!\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/auth/reset-password",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"auth",
+										"reset-password"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Root",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{secret_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}",
+					"host": [
+						"{{base_url}}"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

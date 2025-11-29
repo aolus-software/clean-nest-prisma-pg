@@ -1,5 +1,5 @@
-import { PrismaClient } from "@generated/prisma/client";
-import { HashUtils } from "@utils";
+import { PrismaClient } from "@prisma/client";
+import { DateUtils, HashUtils } from "@utils";
 
 export async function seedUsers(prisma: PrismaClient) {
 	const userNames = ["superuser", "admin", "user"];
@@ -18,6 +18,7 @@ export async function seedUsers(prisma: PrismaClient) {
 				name: name,
 				email: `${name}@example.com`,
 				password: await HashUtils.generateHash("S3crEtP4ssw0rd!"),
+				emailVerifiedAt: DateUtils.now().toDate(),
 			},
 		});
 

@@ -43,7 +43,7 @@ export default tseslint.config(
 			"@typescript-eslint/no-unsafe-member-access": "warn",
 			"@typescript-eslint/no-unsafe-return": "error",
 
-			indent: ["error", "tab", { SwitchCase: 1 }],
+			indent: "off",
 			"linebreak-style": ["error", "unix"],
 			quotes: [
 				"error",
