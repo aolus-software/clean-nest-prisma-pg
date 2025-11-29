@@ -24,14 +24,24 @@ export class MailService {
 	}
 
 	private _enrichMailOptions(options: MailJobData): MailJobData {
-		const appName = this._configService.get("APP_NAME");
+		let appName: string | undefined = this._configService.get("APP_NAME");
+		let appEnv: string | undefined = this._configService.get("APP_ENV");
+
+		if (!appName) {
+			appName = "Application";
+		}
+
+		if (!appEnv) {
+			appEnv = "development";
+		}
+
 		let subject = options.subject;
 		if (subject && !subject.includes(appName)) {
 			subject = `${appName} - ${subject}`;
 		}
 
-		if (this._configService.get("APP_ENV") !== "production") {
-			subject = `[${(this._configService.get("APP_ENV") as string).toUpperCase()}] ${subject}`;
+		if (appEnv !== "production") {
+			subject = `[${appEnv.toUpperCase()}] ${subject}`;
 		}
 
 		return {
