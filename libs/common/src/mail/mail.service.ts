@@ -31,7 +31,7 @@ export class MailService {
 		}
 
 		if (this._configService.get("APP_ENV") !== "production") {
-			subject = `[${this._configService.get("APP_ENV").toUpperCase()}] ${subject}`;
+			subject = `[${(this._configService.get("APP_ENV") as string).toUpperCase()}] ${subject}`;
 		}
 
 		return {
