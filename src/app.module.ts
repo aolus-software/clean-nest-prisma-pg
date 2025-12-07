@@ -8,6 +8,7 @@ import { PassportModule } from "@nestjs/passport";
 import * as jwt from "jsonwebtoken";
 import { AuthStrategy, CommonModule, ThrottlerModule } from "@common";
 import { PrismaService } from "@repositories";
+import { SettingsModule } from "./settings/settings.module";
 
 @Module({
 	imports: [
@@ -26,6 +27,7 @@ import { PrismaService } from "@repositories";
 		ThrottlerModule,
 
 		AuthModule,
+		SettingsModule,
 	],
 	controllers: [AppController],
 	providers: [AuthStrategy, PrismaService],

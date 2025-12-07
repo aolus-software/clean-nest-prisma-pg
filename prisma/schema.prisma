@@ -13,6 +13,13 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  BLOCKED
+}
+
 model User {
   id        String       @id @default(uuid()) @db.Uuid
   email     String   @db.VarChar(255)
@@ -22,6 +29,7 @@ model User {
   deletedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  status UserStatus @default(ACTIVE)
 
   @@index([email], name: "idx_user_email")
   @@index([deletedAt], name: "idx_user_deleted_at")

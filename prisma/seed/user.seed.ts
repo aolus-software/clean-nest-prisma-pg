@@ -19,6 +19,7 @@ export async function seedUsers(prisma: PrismaClient) {
 				email: `${name}@example.com`,
 				password: await HashUtils.generateHash("S3crEtP4ssw0rd!"),
 				emailVerifiedAt: DateUtils.now().toDate(),
+				status: "ACTIVE",
 			},
 		});
 

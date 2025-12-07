@@ -1,6 +1,9 @@
 export type PaginationResponse<T> = {
 	data: T[];
-	page: number;
-	limit: number;
-	totalCount: number;
+	meta: {
+		page: number;
+		limit: number;
+		totalCount: number;
+		totalPages: number;
+	};
 };
