@@ -8,14 +8,14 @@ import { DatatableType, PaginationResponse } from "@common";
 @Injectable()
 export class PermissionsService {
 	async create(createPermissionDto: CreatePermissionDto): Promise<void> {
-		await prisma.$transaction(async (prisma) => {
+		await prisma.$transaction(async (tx) => {
 			const permissionData: Prisma.PermissionCreateInput[] =
 				createPermissionDto.names.map((action) => ({
 					name: `${action}:${createPermissionDto.group}`,
 					group: createPermissionDto.group,
 				}));
 
-			await prisma.permission.createMany({
+			await tx.permission.createMany({
 				data: permissionData,
 				skipDuplicates: true,
 			});
@@ -41,8 +41,8 @@ export class PermissionsService {
 		id: string,
 		updatePermissionDto: UpdatePermissionDto,
 	): Promise<void> {
-		await prisma.$transaction(async (prisma) => {
-			const existingPermission = await prisma.permission.findUnique({
+		await prisma.$transaction(async (tx) => {
+			const existingPermission = await tx.permission.findUnique({
 				where: { id },
 			});
 			if (!existingPermission) {
@@ -50,7 +50,7 @@ export class PermissionsService {
 			}
 
 			const updatedName = `${updatePermissionDto.name}:${updatePermissionDto.group}`;
-			await prisma.permission.update({
+			await tx.permission.update({
 				where: { id },
 				data: {
 					name: updatedName,
@@ -61,15 +61,15 @@ export class PermissionsService {
 	}
 
 	async remove(id: string): Promise<void> {
-		await prisma.$transaction(async (prisma) => {
-			const existingPermission = await prisma.permission.findUnique({
+		await prisma.$transaction(async (tx) => {
+			const existingPermission = await tx.permission.findUnique({
 				where: { id },
 			});
 			if (!existingPermission) {
 				throw new NotFoundException(`Permission with ID ${id} not found`);
 			}
 
-			await prisma.permission.delete({
+			await tx.permission.delete({
 				where: { id },
 			});
 		});
