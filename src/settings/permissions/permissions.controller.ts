@@ -23,9 +23,9 @@ import {
 	RoleGuard,
 	SortDirection,
 } from "@common";
-import { Response } from "express";
 import { PermissionList } from "@repositories";
 import { defaultSort, paginationLength } from "@utils";
+import { FastifyReply } from "fastify";
 
 @Controller("permissions")
 @UseGuards(AuthGuard, RoleGuard)
@@ -36,7 +36,7 @@ export class PermissionsController {
 	@Post()
 	async create(
 		@Body() createPermissionDto: CreatePermissionDto,
-		@Res() res: Response,
+		@Res() res: FastifyReply,
 	) {
 		try {
 			await this.permissionsService.create(createPermissionDto);
@@ -59,7 +59,7 @@ export class PermissionsController {
 		@Query("sortDirection") sortDirection: string,
 		@Query(new FilterValidationPipe())
 		filter: Record<string, string | boolean | Date> | null,
-		@Res() res: Response,
+		@Res() res: FastifyReply,
 	) {
 		try {
 			const query: DatatableType = {
@@ -86,7 +86,7 @@ export class PermissionsController {
 	}
 
 	@Get(":id")
-	async findOne(@Param("id") id: string, @Res() res: Response) {
+	async findOne(@Param("id") id: string, @Res() res: FastifyReply) {
 		try {
 			const data = await this.permissionsService.findOne(id);
 			return ResponseHandler.success<PermissionList>(
@@ -103,7 +103,7 @@ export class PermissionsController {
 	async update(
 		@Param("id") id: string,
 		@Body() updatePermissionDto: UpdatePermissionDto,
-		@Res() res: Response,
+		@Res() res: FastifyReply,
 	) {
 		try {
 			await this.permissionsService.update(id, updatePermissionDto);
@@ -118,7 +118,7 @@ export class PermissionsController {
 	}
 
 	@Delete(":id")
-	async remove(@Param("id") id: string, @Res() res: Response) {
+	async remove(@Param("id") id: string, @Res() res: FastifyReply) {
 		try {
 			await this.permissionsService.remove(id);
 			return ResponseHandler.success<void>(

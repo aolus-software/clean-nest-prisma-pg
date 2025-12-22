@@ -2,9 +2,10 @@ import "dotenv/config";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { CustomValidationPipe } from "@common/pipes/custom-validation/custom-validation.pipe";
+import { FastifyAdapter } from "@nestjs/platform-fastify";
 
 async function bootstrap() {
-	const app = await NestFactory.create(AppModule);
+	const app = await NestFactory.create(AppModule, new FastifyAdapter());
 	app.useGlobalPipes(new CustomValidationPipe());
 
 	// CORS Configuration=====================

@@ -6,100 +6,76 @@ import {
 	UnprocessableEntityException,
 } from "@nestjs/common";
 import { Observable } from "rxjs";
-import { diskStorage } from "multer";
-import { extname } from "path";
-import { Request } from "express";
+import { createWriteStream } from "fs";
+import { extname, join } from "path";
+import { FastifyRequest } from "fastify";
+import { MultipartFile } from "@fastify/multipart";
 import { allowedImageMimeTypes, maxUploadFile } from "@utils";
-
-type MulterFileFilterCallback = (
-	error: Error | null,
-	acceptFile: boolean,
-) => void;
 
 export interface FileUploadOptions {
 	destination?: string;
-
-	filename?: (req: Request, file: Express.Multer.File) => string;
 	preserveOriginalName?: boolean;
 	maxUploadFile?: number;
 	allowedMimeTypes?: string[];
 }
 
-export const createMulterConfig = (options: FileUploadOptions = {}) => ({
-	storage: diskStorage({
-		destination: options.destination || "./uploads",
-		filename: (req, file, cb) => {
-			if (options.filename) {
-				const customFilename = options.filename(req, file);
-				cb(null, customFilename);
-			} else if (options.preserveOriginalName) {
-				const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-				const name = file.originalname.split(".")[0];
-				const ext = extname(file.originalname);
-				cb(null, `${name}-${uniqueSuffix}${ext}`);
-			} else {
-				const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-				const ext = extname(file.originalname);
-				const filename = `${file.fieldname}-${uniqueSuffix}${ext}`;
-				cb(null, filename);
-			}
-		},
-	}),
-	fileFilter: (
-		req: Request,
-		file: Express.Multer.File,
-		cb: MulterFileFilterCallback,
-	) => {
-		if (options.allowedMimeTypes && options.allowedMimeTypes.length > 0) {
-			if (options.allowedMimeTypes.includes(file.mimetype)) {
-				cb(null, true);
-			} else {
-				cb(
-					new UnprocessableEntityException({
-						message: `Unsupported file type ${extname(file.originalname)}`,
-						error: {
-							mimeType: [
-								`Unsupported file type ${file.mimetype}, expected one of: ${options.allowedMimeTypes.join(", ")}`,
-							],
-						},
-					}),
-					false,
-				);
-			}
-			return;
-		}
-
-		if (allowedImageMimeTypes.includes(file.mimetype)) {
-			cb(null, true);
-		} else {
-			cb(
-				new UnprocessableEntityException({
-					message: `Unsupported file type ${extname(file.originalname)}`,
-					error: {
-						mimeType: [
-							`Unsupported file type ${file.mimetype}, expected one of: ${allowedImageMimeTypes.join(", ")}`,
-						],
-					},
-				}),
-				false,
-			);
-		}
-	},
-	limits: {
-		fileSize: options.maxUploadFile || maxUploadFile,
-	},
-});
-
-// Keep the original config for backward compatibility
-export const multerConfig = createMulterConfig();
-
 @Injectable()
 export class FileUploadInterceptor implements NestInterceptor {
 	constructor(private readonly options: FileUploadOptions = {}) {}
 
-	// eslint-disable-next-line
-	intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-		createMulterConfig(this.options);
+	async intercept(
+		context: ExecutionContext,
+		next: CallHandler,
+	): Promise<Observable<any>> {
+		const request = context.switchToHttp().getRequest<FastifyRequest>();
+
+		const file = (await request.file()) as MultipartFile | undefined;
+
+		if (!file) {
+			throw new UnprocessableEntityException("File is required");
+		}
+
+		const allowed = this.options.allowedMimeTypes?.length
+			? this.options.allowedMimeTypes
+			: allowedImageMimeTypes;
+
+		if (!allowed.includes(file.mimetype)) {
+			throw new UnprocessableEntityException({
+				message: "Unsupported file type",
+				error: {
+					mimeType: [
+						`Unsupported ${file.mimetype}, expected: ${allowed.join(", ")}`,
+					],
+				},
+			});
+		}
+
+		const uploadDir = this.options.destination || "./uploads";
+
+		const ext = extname(file.filename);
+		const name = this.options.preserveOriginalName
+			? file.filename.replace(ext, "")
+			: file.fieldname;
+
+		const filename = `${name}-${Date.now()}${ext}`;
+		const filepath = join(uploadDir, filename);
+
+		await new Promise<void>((resolve, reject) => {
+			const stream = createWriteStream(filepath);
+
+			file.file.pipe(stream);
+
+			file.file.on("error", reject);
+			stream.on("finish", () => resolve());
+		});
+
+		// attach to request for controller use
+		(request as any).uploadedFile = {
+			filename,
+			filepath,
+			mimetype: file.mimetype,
+		};
+
 		return next.handle();
 	}
 }

@@ -13,7 +13,7 @@ import {
 import { UsersService } from "./users.service";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
-import { Response } from "express";
+
 import {
 	AuthGuard,
 	DatatableType,
@@ -28,6 +28,7 @@ import {
 import { defaultSort, paginationLength } from "@utils";
 import { UpdateStatusDto } from "./dto/update-status.dto";
 import { UpdatePasswordDto } from "./dto/update-password.dto";
+import { FastifyReply } from "fastify";
 
 @Controller("users")
 @UseGuards(AuthGuard, PermissionGuard, RoleGuard)
@@ -36,7 +37,7 @@ export class UsersController {
 
 	@Post()
 	@PermissionAuth("user:create")
-	async create(@Body() createUserDto: CreateUserDto, @Res() res: Response) {
+	async create(@Body() createUserDto: CreateUserDto, @Res() res: FastifyReply) {
 		try {
 			await this.usersService.create(createUserDto);
 			return ResponseHandler.success<void>(
@@ -50,7 +51,7 @@ export class UsersController {
 	}
 
 	@Post(":id/resend-verify-email")
-	async resendVerifyEmail(@Param("id") id: string, @Res() res: Response) {
+	async resendVerifyEmail(@Param("id") id: string, @Res() res: FastifyReply) {
 		try {
 			await this.usersService.resendVerificationEmail(id);
 			return ResponseHandler.success<void>(
@@ -73,7 +74,7 @@ export class UsersController {
 		@Query("sortDirection") sortDirection: string,
 		@Query(new FilterValidationPipe())
 		filter: Record<string, string | boolean | Date> | null,
-		@Res() res: Response,
+		@Res() res: FastifyReply,
 	) {
 		try {
 			const query: DatatableType = {
@@ -100,7 +101,7 @@ export class UsersController {
 
 	@Get(":id")
 	@PermissionAuth("user:view")
-	async findOne(@Param("id") id: string, @Res() res: Response) {
+	async findOne(@Param("id") id: string, @Res() res: FastifyReply) {
 		try {
 			const user = await this.usersService.findOne(id);
 			return ResponseHandler.success(200, "User found successfully", user);
@@ -114,7 +115,7 @@ export class UsersController {
 	async update(
 		@Param("id") id: string,
 		@Body() updateUserDto: UpdateUserDto,
-		@Res() res: Response,
+		@Res() res: FastifyReply,
 	) {
 		try {
 			await this.usersService.update(id, updateUserDto);
@@ -133,7 +134,7 @@ export class UsersController {
 	async updateStatus(
 		@Param("id") id: string,
 		@Body() updateStatusDto: UpdateStatusDto,
-		@Res() res: Response,
+		@Res() res: FastifyReply,
 	) {
 		try {
 			await this.usersService.updateStatus(id, updateStatusDto);
@@ -152,7 +153,7 @@ export class UsersController {
 	async updatePassword(
 		@Param("id") id: string,
 		@Body() updatePasswordDto: UpdatePasswordDto,
-		@Res() res: Response,
+		@Res() res: FastifyReply,
 	) {
 		try {
 			await this.usersService.updatePassword(id, updatePasswordDto);
@@ -168,7 +169,7 @@ export class UsersController {
 
 	@Delete(":id")
 	@PermissionAuth("user:delete")
-	async remove(@Param("id") id: string, @Res() res: Response) {
+	async remove(@Param("id") id: string, @Res() res: FastifyReply) {
 		try {
 			await this.usersService.remove(id);
 			return ResponseHandler.success<void>(

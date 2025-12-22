@@ -20,4 +20,4 @@ export * from "./strategies/auth.strategy";
 export * from "./throttler/throttler.module";
 export * from "./types/datatable";
 export * from "./types/pagination";
-export * from "./types/express";
+export * from "./types/fastify";

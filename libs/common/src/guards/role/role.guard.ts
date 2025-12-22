@@ -6,7 +6,7 @@ import {
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { UserInformation } from "@repositories/repositories";
-import { Request } from "express";
+import { FastifyRequest } from "fastify";
 
 @Injectable()
 export class RoleGuard implements CanActivate {
@@ -22,7 +22,7 @@ export class RoleGuard implements CanActivate {
 			return true;
 		}
 
-		const request: Request = context.switchToHttp().getRequest();
+		const request: FastifyRequest = context.switchToHttp().getRequest();
 		const user: UserInformation = request.user;
 		if (!user || !user.roles) {
 			throw new ForbiddenException("Access denied");

@@ -1,7 +1,7 @@
 import { UserInformation } from "@repositories";
 
-declare module "express" {
-	interface Request {
+declare module "fastify" {
+	interface FastifyRequest {
 		user: UserInformation;
 	}
 }

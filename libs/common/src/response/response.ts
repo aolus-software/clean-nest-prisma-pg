@@ -1,6 +1,6 @@
 import { HttpException, UnprocessableEntityException } from "@nestjs/common";
 import { LoggerUtils } from "@utils";
-import { Response } from "express";
+import { FastifyReply } from "fastify";
 
 export class SuccessResponse<T> {
 	constructor(
@@ -33,11 +33,11 @@ export class ResponseHandler {
 		return new ErrorResponse(statusCode, false, message);
 	}
 
-	static handleError(res: Response, error: unknown): Response {
+	static handleError(res: FastifyReply, error: unknown): FastifyReply {
 		if (error instanceof HttpException) {
 			if (error instanceof UnprocessableEntityException) {
 				const response = this.error(422, "Unprocessable Entity");
-				return res.status(422).json({
+				return res.status(422).send({
 					...response,
 					...(error.getResponse() as Record<string, unknown>),
 				});
@@ -50,22 +50,22 @@ export class ResponseHandler {
 				const msg = message as { message?: string; error?: string };
 				return res
 					.status(status)
-					.json(
+					.send(
 						this.error(status, msg.message ?? msg.error ?? "An error occurred"),
 					);
 			}
 
-			return res.status(status).json(this.error(status, String(message)));
+			return res.status(status).send(this.error(status, String(message)));
 		}
 
 		LoggerUtils.error(`Internal server error`, error);
 
-		return res.status(500).json(this.error(500, "Internal Server Error"));
+		return res.status(500).send(this.error(500, "Internal Server Error"));
 	}
 }
 
 // Backward compatibility exports
-export const errorResponse = (res: Response, error: unknown) => {
+export const errorResponse = (res: FastifyReply, error: unknown) => {
 	return ResponseHandler.handleError(res, error);
 };
 

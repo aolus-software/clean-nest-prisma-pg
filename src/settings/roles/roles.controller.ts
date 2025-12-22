@@ -23,12 +23,12 @@ import {
 	ResponseHandler,
 	SortDirection,
 } from "@common";
-import { Response } from "express";
 import { defaultSort, paginationLength } from "@utils";
 import {
 	RoleDetail,
 	RoleList,
 } from "@repositories/repositories/role.repostory";
+import { FastifyReply } from "fastify";
 
 @Controller("roles")
 @UseGuards(AuthGuard, PermissionGuard)
@@ -37,7 +37,7 @@ export class RolesController {
 
 	@Post()
 	@PermissionAuth("role:create")
-	async create(@Body() createRoleDto: CreateRoleDto, @Res() res: Response) {
+	async create(@Body() createRoleDto: CreateRoleDto, @Res() res: FastifyReply) {
 		try {
 			await this.rolesService.create(createRoleDto);
 			return ResponseHandler.success<void>(
@@ -60,7 +60,7 @@ export class RolesController {
 		@Query("sortDirection") sortDirection: string,
 		@Query(new FilterValidationPipe())
 		filter: Record<string, string | boolean | Date> | null,
-		@Res() res: Response,
+		@Res() res: FastifyReply,
 	) {
 		try {
 			const query: DatatableType = {
@@ -74,10 +74,12 @@ export class RolesController {
 				filter: filter || null,
 			};
 			const result = await this.rolesService.findAll(query);
-			return ResponseHandler.success<PaginationResponse<RoleList>>(
-				200,
-				"Roles fetched successfully",
-				result,
+			return res.send(
+				ResponseHandler.success<PaginationResponse<RoleList>>(
+					200,
+					"Roles fetched successfully",
+					result,
+				),
 			);
 		} catch (error) {
 			return ResponseHandler.handleError(res, error);
@@ -86,7 +88,7 @@ export class RolesController {
 
 	@Get(":id")
 	@PermissionAuth("role:view")
-	async findOne(@Param("id") id: string, @Res() res: Response) {
+	async findOne(@Param("id") id: string, @Res() res: FastifyReply) {
 		try {
 			const result = await this.rolesService.findOne(id);
 			return ResponseHandler.success<RoleDetail>(
@@ -104,7 +106,7 @@ export class RolesController {
 	async update(
 		@Param("id") id: string,
 		@Body() updateRoleDto: UpdateRoleDto,
-		@Res() res: Response,
+		@Res() res: FastifyReply,
 	) {
 		try {
 			await this.rolesService.update(id, updateRoleDto);
@@ -120,7 +122,7 @@ export class RolesController {
 
 	@Delete(":id")
 	@PermissionAuth("role:delete")
-	async remove(@Param("id") id: string, @Res() res: Response) {
+	async remove(@Param("id") id: string, @Res() res: FastifyReply) {
 		try {
 			await this.rolesService.remove(id);
 			return ResponseHandler.success<void>(

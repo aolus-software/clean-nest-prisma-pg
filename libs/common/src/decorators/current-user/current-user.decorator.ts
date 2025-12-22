@@ -4,11 +4,11 @@ import {
 	UnauthorizedException,
 } from "@nestjs/common";
 import { UserInformation } from "@repositories";
-import { Request } from "express";
+import { FastifyRequest } from "fastify";
 
 export const CurrentUser = createParamDecorator(
 	(data: unknown, ctx: ExecutionContext): UserInformation => {
-		const request: Request = ctx.switchToHttp().getRequest();
+		const request: FastifyRequest = ctx.switchToHttp().getRequest();
 		if (!request.user) {
 			throw new UnauthorizedException("Unauthorized");
 		}
