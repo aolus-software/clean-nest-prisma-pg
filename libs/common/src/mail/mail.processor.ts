@@ -4,8 +4,10 @@ import { Job } from "bullmq";
 import { ISendMailOptions, MailerService } from "@nestjs-modules/mailer";
 import { LoggerUtils } from "@utils";
 
-export interface MailJobData
-	extends Omit<ISendMailOptions, "to" | "cc" | "bcc" | "replyTo"> {
+export interface MailJobData extends Omit<
+	ISendMailOptions,
+	"to" | "cc" | "bcc" | "replyTo"
+> {
 	to?: string | string[];
 	cc?: string | string[];
 	bcc?: string | string[];

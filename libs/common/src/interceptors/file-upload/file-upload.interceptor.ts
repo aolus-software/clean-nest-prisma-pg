@@ -10,7 +10,16 @@ import { createWriteStream } from "fs";
 import { extname, join } from "path";
 import { FastifyRequest } from "fastify";
 import { MultipartFile } from "@fastify/multipart";
-import { allowedImageMimeTypes, maxUploadFile } from "@utils";
+import { allowedImageMimeTypes } from "@utils";
+export interface UploadedFileInfo {
+	filename: string;
+	filepath: string;
+	mimetype: string;
+}
+
+export interface FastifyRequestWithUpload {
+	uploadedFile: UploadedFileInfo;
+}
 
 export interface FileUploadOptions {
 	destination?: string;
@@ -26,55 +35,61 @@ export class FileUploadInterceptor implements NestInterceptor {
 	async intercept(
 		context: ExecutionContext,
 		next: CallHandler,
-	): Promise<Observable<any>> {
+	): Promise<Observable<unknown>> {
 		const request = context.switchToHttp().getRequest<FastifyRequest>();
 
-		const file = (await request.file()) as MultipartFile | undefined;
+		const file: MultipartFile | undefined = await request.file();
 
 		if (!file) {
 			throw new UnprocessableEntityException("File is required");
 		}
 
-		const allowed = this.options.allowedMimeTypes?.length
+		const allowedMimeTypes = this.options.allowedMimeTypes?.length
 			? this.options.allowedMimeTypes
 			: allowedImageMimeTypes;
 
-		if (!allowed.includes(file.mimetype)) {
+		if (!allowedMimeTypes.includes(file.mimetype)) {
 			throw new UnprocessableEntityException({
 				message: "Unsupported file type",
 				error: {
 					mimeType: [
-						`Unsupported ${file.mimetype}, expected: ${allowed.join(", ")}`,
+						`Unsupported ${file.mimetype}, expected one of: ${allowedMimeTypes.join(
+							", ",
+						)}`,
 					],
 				},
 			});
 		}
 
-		const uploadDir = this.options.destination || "./uploads";
+		const uploadDir = this.options.destination ?? "./uploads";
+		const extension = extname(file.filename);
 
-		const ext = extname(file.filename);
-		const name = this.options.preserveOriginalName
-			? file.filename.replace(ext, "")
+		const baseName = this.options.preserveOriginalName
+			? file.filename.replace(extension, "")
 			: file.fieldname;
 
-		const filename = `${name}-${Date.now()}${ext}`;
+		const filename = `${baseName}-${Date.now()}${extension}`;
 		const filepath = join(uploadDir, filename);
 
 		await new Promise<void>((resolve, reject) => {
 			const stream = createWriteStream(filepath);
 
-			file.file.pipe(stream);
-
-			file.file.on("error", reject);
+			file.file.on("error", (err: Error) => reject(err));
+			stream.on("error", (err: Error) => reject(err));
 			stream.on("finish", () => resolve());
+
+			file.file.pipe(stream);
 		});
 
-		// attach to request for controller use
-		(request as any).uploadedFile = {
+		const uploadedFile: UploadedFileInfo = {
 			filename,
 			filepath,
 			mimetype: file.mimetype,
 		};
+
+		Object.assign(request as FastifyRequest & FastifyRequestWithUpload, {
+			uploadedFile,
+		});
 
 		return next.handle();
 	}
