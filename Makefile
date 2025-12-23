@@ -14,6 +14,7 @@ help:
 	@echo "  make format          - Format the project"
 	@echo "  make test            - Run tests"
 	@echo "  make test-watch      - Run tests in watch mode"
+	@echo "  make db-generate     - Generate the prisma client"
 	@echo "  make db-migrate      - Run database migrations (prod)"
 	@echo "  make db-migrate-dev  - Run database migrations (dev)"
 	@echo "  make db-seed         - Run database seeder"
@@ -61,6 +62,10 @@ test-watch:
 # ===========================
 # Database (Prisma)
 # ===========================
+db-generate:
+	@echo "Generate the prisma client..."
+	bunx --bun prisma generate
+
 db-migrate:
 	@echo "Running database migrations (production)..."
 	bunx --bun prisma migrate deploy
@@ -98,5 +103,5 @@ deploy-prep:
 # ===========================
 .PHONY: \
 	help dev build lint format test test-watch \
-	db-migrate db-migrate-dev db-seed db-reset db-studio \
+	db-generate db-migrate db-migrate-dev db-seed db-reset db-studio \
 	deploy-prep

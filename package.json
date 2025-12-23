@@ -20,10 +20,12 @@
 		"test:e2e": "jest --config ./test/jest-e2e.json",
 		"prepare": "husky",
 		"seed": "ts-node -r tsconfig-paths/register prisma/seed/index.ts",
-		"seed:file": "ts-node -r tsconfig-paths/register prisma/seed/$FILE.ts"
+		"seed:file": "ts-node -r tsconfig-paths/register prisma/seed/$FILE.ts",
+		"dev": "NODE_OPTIONS='-r tsconfig-paths/register' nest start --watch"
 	},
 	"dependencies": {
 		"@fastify/multipart": "^9.3.0",
+		"@fastify/static": "^8.3.0",
 		"@nestjs-modules/mailer": "^2.0.2",
 		"@nestjs/bullmq": "^11.0.4",
 		"@nestjs/cache-manager": "^3.0.1",
@@ -35,6 +37,7 @@
 		"@nestjs/passport": "^11.0.5",
 		"@nestjs/platform-fastify": "^11.1.10",
 		"@nestjs/serve-static": "^5.0.4",
+		"@nestjs/swagger": "^11.2.3",
 		"@nestjs/throttler": "^6.5.0",
 		"@prisma/adapter-libsql": "^7.2.0",
 		"@prisma/adapter-pg": "^7.2.0",
@@ -64,8 +67,6 @@
 		"@nestjs/cli": "^11.0.14",
 		"@nestjs/schematics": "^11.0.9",
 		"@nestjs/testing": "^11.1.10",
-		"@swc/cli": "^0.7.9",
-		"@swc/core": "^1.15.7",
 		"@types/handlebars": "^4.1.0",
 		"@types/jest": "^30.0.0",
 		"@types/multer": "^2.0.0",
