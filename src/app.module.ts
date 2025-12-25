@@ -9,6 +9,7 @@ import * as jwt from "jsonwebtoken";
 import { AuthStrategy, CommonModule, ThrottlerModule } from "@common";
 import { PrismaService } from "@repositories";
 import { SettingsModule } from "./settings/settings.module";
+import { HealthModule } from "./health/health.module";
 
 @Module({
 	imports: [
@@ -27,6 +28,7 @@ import { SettingsModule } from "./settings/settings.module";
 		ThrottlerModule,
 
 		AuthModule,
+		HealthModule,
 		SettingsModule,
 	],
 	controllers: [AppController],

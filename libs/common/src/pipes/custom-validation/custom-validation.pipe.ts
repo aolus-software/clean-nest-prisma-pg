@@ -22,6 +22,7 @@ export class CustomValidationPipe extends ValidationPipe {
 				return new UnprocessableEntityException({
 					statusCode: 422,
 					message: firstMessage,
+					data: null,
 					errors: formattedErrors,
 				});
 			},

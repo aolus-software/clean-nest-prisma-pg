@@ -1,267 +1,269 @@
-# Clean Nest
+# Clean Nest Prisma PG
 
-A production-ready NestJS boilerplate with authentication, role-based access control (RBAC), and essential utilities for building scalable backend applications.
+A production-ready NestJS starter kit using Prisma ORM with PostgreSQL database. This boilerplate provides a clean architecture foundation for building scalable server-side applications.
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Running the Application](#running-the-application)
+- [Database Management](#database-management)
+- [Testing](#testing)
+- [Available Scripts](#available-scripts)
+- [Make Commands](#make-commands)
+- [License](#license)
+
+## Overview
+
+Clean Nest Prisma PG is a starter template that combines NestJS framework with Prisma ORM and PostgreSQL. It follows clean architecture principles with a modular structure, separating concerns into reusable libraries for common utilities, repositories, and shared functionality.
 
 ## Features
 
-- **Authentication System** - Complete auth flow with JWT tokens, email verification, and password reset
-- **Role-Based Access Control** - Flexible RBAC with roles and permissions
-- **Caching Layer** - Redis-powered caching with utilities
-- **Email Service** - Queue-based email sending with customizable templates
-- **Database Management** - Prisma ORM with PostgreSQL and seeding scripts
-- **Validation & Error Handling** - Comprehensive validation with custom error responses
-- **Utility Libraries** - Date, string, number, hash, and encryption utilities
-- **File Upload Support** - Fastify multipart file handling with validation
+- **Authentication System**: JWT-based authentication with access and refresh tokens
+- **Database ORM**: Prisma ORM with PostgreSQL adapter
+- **Caching**: Redis-based caching with cache-manager
+- **Queue System**: BullMQ for background job processing
+- **Email Service**: Nodemailer integration with Handlebars templating
+- **Rate Limiting**: Built-in throttler for API protection
+- **Validation**: Class-validator and class-transformer for request validation
+- **Code Quality**: ESLint, Prettier, and Husky for code standards
+- **Docker Support**: Docker Compose setup for PostgreSQL and Redis
 
 ## Tech Stack
 
-- **Framework:** NestJS with Fastify
-- **Database:** PostgreSQL with Prisma ORM
-- **Caching:** Redis (with ioredis)
-- **Queue:** BullMQ for background jobs
-- **Authentication:** JWT with Passport
-- **Email:** Nodemailer with Handlebars templates
-- **Validation:** class-validator & class-transformer
-
-## Prerequisites
-
-- Bun
-- PostgreSQL 17+ (or see docker compose)
-- Redis 7+ (or see docker compose)
-
-## Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/aolus-software/clean-nest-prisma-pg.git
-cd clean-nest-prisma-pg
-
-# Install dependencies
-bun install
-
-# Copy environment file
-cp .env.example .env
-
-# Configure your .env file with database and Redis credentials
-```
-
-## Database Setup
-
-```bash
-# Run migrations
-make db-migrate-dev
-
-# Seed database with initial data
-make db-seed
-
-# Open Prisma Studio
-make db-studio
-```
-
-Default seeded users:
-
-- **Superuser:** superuser@example.com / S3crEtP4ssw0rd!
-- **Admin:** admin@example.com / S3crEtP4ssw0rd!
-- **User:** user@example.com / S3crEtP4ssw0rd!
-
-## Development
-
-```bash
-# Start development server
-make dev
-
-# Build project
-make build
-
-# Run linter
-make lint
-
-# Format code
-make format
-
-# Run tests
-make test
-```
+- **Framework**: NestJS 11
+- **Language**: TypeScript
+- **ORM**: Prisma 7
+- **Database**: PostgreSQL 17
+- **Cache/Queue**: Redis 8
+- **Authentication**: Passport.js with JWT strategy
+- **Testing**: Jest
 
 ## Project Structure
 
 ```
-clean-nest/
-├── libs/
-│   ├── common/          # Shared modules (guards, decorators, interceptors)
-│   ├── repositories/    # Database repositories and Prisma client
-│   └── utils/          # Utility functions (date, string, hash, etc.)
-├── prisma/
-│   ├── migrations/      # Database migrations
-│   ├── seed/           # Database seeders
-│   └── schema.prisma   # Prisma schema
-└── src/
-    ├── auth/           # Authentication module
-    └── settings/       # Settings modules (users, roles, permissions)
+├── src/                    # Application source code
+│   ├── auth/               # Authentication module
+│   ├── settings/           # Settings module
+│   ├── app.module.ts       # Root application module
+│   ├── app.controller.ts   # Root controller
+│   └── main.ts             # Application entry point
+├── libs/                   # Shared libraries
+│   ├── common/             # Common utilities and shared code
+│   ├── repositories/       # Database repository patterns
+│   └── utils/              # Utility functions
+├── prisma/                 # Prisma configuration
+│   ├── migrations/         # Database migrations
+│   ├── seed/               # Database seeders
+│   └── schema. prisma       # Prisma schema definition
+├── test/                   # End-to-end tests
+├── docs/                   # Documentation
+└── docker-compose.yml      # Docker services configuration
 ```
 
-## API Endpoints
+## Prerequisites
 
-Or see folder docs then import to postman
+Before you begin, ensure you have the following installed:
 
-### Authentication
+- Node.js (v18 or higher recommended)
+- npm or yarn
+- PostgreSQL 17 (or use Docker)
+- Redis 8 (or use Docker)
+- Make (optional, for using Makefile commands)
 
-- `POST /auth/login` - User login
-- `POST /auth/register` - User registration
-- `POST /auth/verify-email` - Email verification
-- `POST /auth/resend-verification-email` - Resend verification email
-- `POST /auth/forgot-password` - Request password reset
-- `POST /auth/reset-password` - Reset password
-- `GET /auth/profile` - Get authenticated user profile
+## Installation
 
-### Users (Protected)
+1. **Clone the repository**
 
-- `GET /users` - List users
-- `POST /users` - Create user
-- `GET /users/:id` - Get user details
-- `PATCH /users/:id` - Update user
-- `DELETE /users/:id` - Delete user
-- `PATCH /users/:id/status` - Update user status
-- `PATCH /users/:id/password` - Update user password (superuser only)
+   ```bash
+   git clone https://github.com/aolus-software/clean-nest-prisma-pg.git
+   cd clean-nest-prisma-pg
+   ```
 
-### Roles (Protected)
+2. **Install dependencies**
 
-- `GET /roles` - List roles
-- `POST /roles` - Create role
-- `GET /roles/:id` - Get role details
-- `PATCH /roles/:id` - Update role
-- `DELETE /roles/:id` - Delete role
+   ```bash
+   npm install
+   ```
 
-### Permissions (Protected)
-
-- `GET /permissions` - List permissions
-- `POST /permissions` - Create permissions
-- `GET /permissions/:id` - Get permission details
-- `PATCH /permissions/:id` - Update permission
-- `DELETE /permissions/:id` - Delete permission
-
-## Environment Variables
-
-Key configuration variables:
-
-```env
-APP_NAME="Clean Nest"
-APP_PORT=8001
-APP_ENV=development
-APP_TIMEZONE=UTC
-
-DATABASE_URL="postgresql://user:pass@localhost:5432/db"
-
-JWT_SECRET=your_secret_key
-JWT_REFRESH_SECRET=your_refresh_secret_key
-
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-MAIL_HOST=smtp.example.com
-MAIL_PORT=587
-MAIL_USERNAME=your_email
-MAIL_PASSWORD=your_password
-```
-
-## RBAC System
-
-The application uses a flexible RBAC system:
-
-- **Roles** - Define user roles (e.g., superuser, admin, user)
-- **Permissions** - Granular permissions (e.g., user:create, user:update)
-- **Guards** - `@RoleAuth()` and `@PermissionAuth()` decorators for route protection
-
-Example usage:
-
-```typescript
-@UseGuards(AuthGuard, RoleGuard)
-@RoleAuth('admin', 'superuser')
-@Get('protected')
-adminOnly() {
-  return 'Only admins can see this';
-}
-```
-
-## Utilities
-
-### Date Utilities
-
-```typescript
-DateUtils.now(); // Current date with timezone
-DateUtils.addDays(date, 5); // Add days
-DateUtils.format(date, "YYYY-MM-DD");
-```
-
-### String Utilities
-
-```typescript
-StrUtils.random(16); // Generate random string
-StrUtils.slug("Hello World"); // "hello-world"
-StrUtils.camel("hello-world"); // "helloWorld"
-```
-
-### Hash Utilities
-
-```typescript
-HashUtils.generateHash(password);
-HashUtils.compareHash(password, hash);
-```
-
-## Email Templates
-
-Email templates use Handlebars and are located in `libs/common/src/mail/templates/`.
-
-Available templates:
-
-- `auth/verify-email.hbs`
-- `auth/forgot-password.hbs`
-
-## Make Commands
-
-Common make commands for development:
+3. **Set up environment variables**
 
 ```bash
-make dev              # Start development server
-make build            # Build project
-make lint             # Run linter
-make format           # Format code
-make db-migrate-dev   # Run migrations (dev)
-make db-seed          # Seed database
-make db-studio        # Open Prisma Studio
-make db-reset         # Reset database
+cp .env.example .env
+```
+
+4.  **Start the database services (using Docker)**
+
+```bash
+docker-compose up -d
+```
+
+5. **Run database migrations**
+
+   ```bash
+   npx prisma migrate dev
+   npx prisma generate
+   ```
+
+6. **Seed the database (optional)**
+
+   ```bash
+   npm run seed
+   ```
+
+## Configuration
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
+# Application
+APP_NAME="Clean Nest"
+APP_SECRET=your_secret_key_here
+APP_PORT=8001
+APP_URL=localhost:8001
+APP_TIMEZONE=UTC
+APP_ENV=development
+
+# Frontend
+FRONTEND_URL=http://localhost:3000
+
+# Database
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/clean_nest? schema=public"
+
+# JWT Authentication
+JWT_SECRET=your_secret_key_here
+JWT_REFRESH_SECRET=your_refresh_secret_key_here
+JWT_EXPIRES_IN=1d
+JWT_REFRESH_EXPIRES_IN=7d
+
+# Rate Limiting
+THROTTLER_TTL=60
+THROTTLER_LIMIT=60
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_TTL=3600
+
+# Mail Configuration
+MAIL_HOST=
+MAIL_PORT=
+MAIL_SECURE=
+MAIL_USERNAME=
+MAIL_PASSWORD=
+MAIL_FROM="noreply@example.com"
+MAIL_DEFAULT_SUBJECT="Clean Nest"
+```
+
+## Running the Application
+
+```bash
+# Development mode (with hot-reload)
+npm run start:dev
+
+# Production mode
+npm run build
+npm run start:prod
+
+# Debug mode
+npm run start:debug
+```
+
+The application will be available at `http://localhost:8001` (or the port specified in your `.env` file).
+
+## Database Management
+
+```bash
+# Run migrations in development
+npx prisma migrate dev
+
+# Run migrations in production
+npx prisma migrate deploy
+
+# Generate Prisma client
+npx prisma generate
+
+# Open Prisma Studio (database GUI)
+npx prisma studio
+
+# Reset database (caution: deletes all data)
+npx prisma migrate reset --force
+
+# Run database seeder
+npm run seed
+
+# Run specific seed file
+npm run seed:file FILE=filename
 ```
 
 ## Testing
 
 ```bash
-# Run all tests
-make test
+# Run unit tests
+npm run test
 
 # Run tests in watch mode
-make test-watch
+npm run test:watch
 
-# Generate coverage report
-bun run test:cov
+# Run tests with coverage
+npm run test:cov
+
+# Run end-to-end tests
+npm run test:e2e
+
+# Debug tests
+npm run test:debug
 ```
 
-## Deployment
+## Available Scripts
+
+| Script                | Description                               |
+| --------------------- | ----------------------------------------- |
+| `npm run build`       | Build the application                     |
+| `npm run start`       | Start the application                     |
+| `npm run start:dev`   | Start in development mode with hot-reload |
+| `npm run start:debug` | Start in debug mode                       |
+| `npm run start:prod`  | Start in production mode                  |
+| `npm run lint`        | Lint and fix code                         |
+| `npm run format`      | Format code with Prettier                 |
+| `npm run test`        | Run unit tests                            |
+| `npm run test:e2e`    | Run end-to-end tests                      |
+| `npm run test:cov`    | Run tests with coverage                   |
+| `npm run seed`        | Run database seeders                      |
+
+## Make Commands
+
+For convenience, a Makefile is provided with shortcut commands:
+
+| Command               | Description                           |
+| --------------------- | ------------------------------------- |
+| `make help`           | Display available commands            |
+| `make dev`            | Start development server              |
+| `make build`          | Build the project                     |
+| `make lint`           | Lint the project                      |
+| `make format`         | Format the project                    |
+| `make test`           | Run tests                             |
+| `make test-watch`     | Run tests in watch mode               |
+| `make db-migrate`     | Run database migrations (production)  |
+| `make db-migrate-dev` | Run database migrations (development) |
+| `make db-seed`        | Run database seeder                   |
+| `make db-reset`       | Reset the database                    |
+| `make db-studio`      | Start Prisma Studio                   |
+| `make deploy-prep`    | Prepare for deployment                |
+
+To install Make on Ubuntu:
 
 ```bash
-# Prepare for deployment
-make deploy-prep
-
-# This will:
-# - Install dependencies
-# - Run migrations
-# - Generate Prisma client
-# - Build the application
+sudo apt update
+sudo apt install make
 ```
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-For issues and questions, please open an issue on the repository.
+This project is licensed under the MIT License.
