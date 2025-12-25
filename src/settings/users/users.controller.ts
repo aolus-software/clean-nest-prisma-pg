@@ -15,8 +15,11 @@ import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 
 import {
+	ApiStandardResponses,
+	ApiSuccessResponse,
 	AuthGuard,
 	DatatableType,
+	DefaultApiNotFoundResponse,
 	FilterValidationPipe,
 	PermissionAuth,
 	PermissionGuard,
@@ -29,14 +32,33 @@ import { defaultSort, paginationLength } from "@utils";
 import { UpdateStatusDto } from "./dto/update-status.dto";
 import { UpdatePasswordDto } from "./dto/update-password.dto";
 import { FastifyReply } from "fastify";
+import {
+	ApiBearerAuth,
+	ApiCreatedResponse,
+	ApiOkResponse,
+	ApiTags,
+} from "@nestjs/swagger";
+import { ApiDatatableQueries } from "@common/decorators/api-datatable-queries/api-datatable-queries.decorator";
 
 @Controller("users")
 @UseGuards(AuthGuard, PermissionGuard, RoleGuard)
+@ApiTags("Settings/Users")
+@ApiBearerAuth("Bearer")
 export class UsersController {
 	constructor(private readonly usersService: UsersService) {}
 
 	@Post()
 	@PermissionAuth("user:create")
+	@ApiStandardResponses()
+	@ApiCreatedResponse({
+		description: "User created successfully",
+		example: {
+			success: true,
+			statusCode: 201,
+			message: "User created successfully",
+			data: null,
+		},
+	})
 	async create(@Body() createUserDto: CreateUserDto, @Res() res: FastifyReply) {
 		try {
 			await this.usersService.create(createUserDto);
@@ -51,6 +73,16 @@ export class UsersController {
 	}
 
 	@Post(":id/resend-verify-email")
+	@ApiStandardResponses()
+	@ApiOkResponse({
+		description: "Verification email resent successfully",
+		example: {
+			success: true,
+			statusCode: 200,
+			message: "Email verified successfully",
+			data: null,
+		},
+	})
 	async resendVerifyEmail(@Param("id") id: string, @Res() res: FastifyReply) {
 		try {
 			await this.usersService.resendVerificationEmail(id);
@@ -66,6 +98,28 @@ export class UsersController {
 
 	@Get()
 	@PermissionAuth("user:list")
+	@ApiStandardResponses({
+		validation: false,
+	})
+	@ApiDatatableQueries()
+	@ApiSuccessResponse(200, "Users retrieved successfully", {
+		data: [
+			{
+				id: "user-id",
+				name: "John Doe",
+				email: "john.doe@example.com",
+				status: "ACTIVE",
+				createdAt: "2024-01-01T00:00:00.000Z",
+				updatedAt: "2024-01-01T00:00:00.000Z",
+			},
+		],
+		meta: {
+			page: 1,
+			limit: 10,
+			totalCount: 100,
+			totalPages: 10,
+		},
+	})
 	async findAll(
 		@Query("page") page: number,
 		@Query("limit") limit: number,
@@ -101,6 +155,10 @@ export class UsersController {
 
 	@Get(":id")
 	@PermissionAuth("user:view")
+	@ApiStandardResponses({
+		validation: false,
+	})
+	@DefaultApiNotFoundResponse()
 	async findOne(@Param("id") id: string, @Res() res: FastifyReply) {
 		try {
 			const user = await this.usersService.findOne(id);
@@ -112,6 +170,7 @@ export class UsersController {
 
 	@Patch(":id")
 	@PermissionAuth("user:update")
+	@ApiStandardResponses({})
 	async update(
 		@Param("id") id: string,
 		@Body() updateUserDto: UpdateUserDto,
@@ -131,6 +190,7 @@ export class UsersController {
 
 	@Patch(":id/status")
 	@PermissionAuth("user:update")
+	@ApiStandardResponses({})
 	async updateStatus(
 		@Param("id") id: string,
 		@Body() updateStatusDto: UpdateStatusDto,
@@ -150,6 +210,7 @@ export class UsersController {
 
 	@Patch(":id/password")
 	@RoleAuth("superuser")
+	@ApiStandardResponses({})
 	async updatePassword(
 		@Param("id") id: string,
 		@Body() updatePasswordDto: UpdatePasswordDto,
@@ -169,6 +230,10 @@ export class UsersController {
 
 	@Delete(":id")
 	@PermissionAuth("user:delete")
+	@ApiStandardResponses({
+		validation: false,
+	})
+	@DefaultApiNotFoundResponse()
 	async remove(@Param("id") id: string, @Res() res: FastifyReply) {
 		try {
 			await this.usersService.remove(id);

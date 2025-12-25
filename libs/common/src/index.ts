@@ -4,6 +4,7 @@ export * from "./common.service";
 export * from "./cache/cache.service";
 export * from "./cache/cache.module";
 export * from "./cache/const";
+export * from "./decorators/api-response/api-response.decorator";
 export * from "./decorators/current-user/current-user.decorator";
 export * from "./decorators/role-auth/role-auth.decorator";
 export * from "./decorators/permission-auth/permission-auth.decorator";
