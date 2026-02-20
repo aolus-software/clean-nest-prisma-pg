@@ -1,4 +1,6 @@
-bun run lint-staged
+bun install
+bun run lint
+bun run format
 bunx --bun prisma migrate deploy
 bunx --bun prisma generate
 bun run build

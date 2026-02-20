@@ -129,7 +129,7 @@
 		}
 	},
 	"lint-staged": {
-		"*.{ts}": [
+		"*.{ts,js}": [
 			"bun run lint",
 			"bun run format"
 		]
