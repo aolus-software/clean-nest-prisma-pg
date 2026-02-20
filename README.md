@@ -36,12 +36,16 @@ Clean Nest Prisma PG is a starter template that combines NestJS framework with P
 
 ## Tech Stack
 
+- **Runtime**: Bun
 - **Framework**: NestJS 11
 - **Language**: TypeScript
 - **ORM**: Prisma 7
 - **Database**: PostgreSQL 17
 - **Cache/Queue**: Redis 8
 - **Authentication**: Passport.js with JWT strategy
+- **Security**: Fastify Helmet
+- **API Docs**: Scalar (via `@scalar/nestjs-api-reference`)
+- **Env Validation**: envalid
 - **Testing**: Jest
 
 ## Project Structure
@@ -55,12 +59,13 @@ Clean Nest Prisma PG is a starter template that combines NestJS framework with P
 │   └── main.ts             # Application entry point
 ├── libs/                   # Shared libraries
 │   ├── common/             # Common utilities and shared code
+│   ├── config/             # App configuration (env validation, CORS, Helmet, Swagger)
 │   ├── repositories/       # Database repository patterns
 │   └── utils/              # Utility functions
 ├── prisma/                 # Prisma configuration
 │   ├── migrations/         # Database migrations
 │   ├── seed/               # Database seeders
-│   └── schema. prisma       # Prisma schema definition
+│   └── schema.prisma       # Prisma schema definition
 ├── test/                   # End-to-end tests
 ├── docs/                   # Documentation
 └── docker-compose.yml      # Docker services configuration
@@ -70,8 +75,7 @@ Clean Nest Prisma PG is a starter template that combines NestJS framework with P
 
 Before you begin, ensure you have the following installed:
 
-- Node.js (v18 or higher recommended)
-- npm or yarn
+- Bun (v1.0 or higher)
 - PostgreSQL 17 (or use Docker)
 - Redis 8 (or use Docker)
 - Make (optional, for using Makefile commands)
@@ -88,7 +92,7 @@ Before you begin, ensure you have the following installed:
 2. **Install dependencies**
 
    ```bash
-   npm install
+   bun install
    ```
 
 3. **Set up environment variables**
@@ -113,7 +117,7 @@ docker-compose up -d
 6. **Seed the database (optional)**
 
    ```bash
-   npm run seed
+   bun run seed
    ```
 
 ## Configuration
@@ -123,17 +127,18 @@ Create a `.env` file in the root directory with the following variables:
 ```env
 # Application
 APP_NAME="Clean Nest"
+APP_VERSION=1.0.0
 APP_SECRET=your_secret_key_here
 APP_PORT=8001
 APP_URL=localhost:8001
 APP_TIMEZONE=UTC
-APP_ENV=development
+NODE_ENV=development
 
 # Frontend
 FRONTEND_URL=http://localhost:3000
 
 # Database
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/clean_nest? schema=public"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/clean_nest?schema=public"
 
 # JWT Authentication
 JWT_SECRET=your_secret_key_here
@@ -144,6 +149,13 @@ JWT_REFRESH_EXPIRES_IN=7d
 # Rate Limiting
 THROTTLER_TTL=60
 THROTTLER_LIMIT=60
+
+# CORS (comma-separated, defaults shown)
+ALLOWED_ORIGINS=http://localhost:3000
+ALLOWED_METHODS=GET,POST,PUT,DELETE,OPTIONS
+ALLOWED_HEADERS=Content-Type,Authorization
+MAX_AGE=3600
+CREDENTIALS=false
 
 # Redis
 REDIS_HOST=localhost
@@ -165,17 +177,19 @@ MAIL_DEFAULT_SUBJECT="Clean Nest"
 
 ```bash
 # Development mode (with hot-reload)
-npm run start:dev
+bun run start:dev
 
 # Production mode
-npm run build
-npm run start:prod
+bun run build
+bun run start:prod
 
 # Debug mode
-npm run start:debug
+bun run start:debug
 ```
 
 The application will be available at `http://localhost:8001` (or the port specified in your `.env` file).
+
+API documentation is available at `http://localhost:8001/docs` in non-production environments.
 
 ## Database Management
 
@@ -196,46 +210,46 @@ npx prisma studio
 npx prisma migrate reset --force
 
 # Run database seeder
-npm run seed
+bun run seed
 
 # Run specific seed file
-npm run seed:file FILE=filename
+bun run seed:file FILE=filename
 ```
 
 ## Testing
 
 ```bash
 # Run unit tests
-npm run test
+bun run test
 
 # Run tests in watch mode
-npm run test:watch
+bun run test:watch
 
 # Run tests with coverage
-npm run test:cov
+bun run test:cov
 
 # Run end-to-end tests
-npm run test:e2e
+bun run test:e2e
 
 # Debug tests
-npm run test:debug
+bun run test:debug
 ```
 
 ## Available Scripts
 
 | Script                | Description                               |
 | --------------------- | ----------------------------------------- |
-| `npm run build`       | Build the application                     |
-| `npm run start`       | Start the application                     |
-| `npm run start:dev`   | Start in development mode with hot-reload |
-| `npm run start:debug` | Start in debug mode                       |
-| `npm run start:prod`  | Start in production mode                  |
-| `npm run lint`        | Lint and fix code                         |
-| `npm run format`      | Format code with Prettier                 |
-| `npm run test`        | Run unit tests                            |
-| `npm run test:e2e`    | Run end-to-end tests                      |
-| `npm run test:cov`    | Run tests with coverage                   |
-| `npm run seed`        | Run database seeders                      |
+| `bun run build`       | Build the application                     |
+| `bun run start`       | Start the application                     |
+| `bun run start:dev`   | Start in development mode with hot-reload |
+| `bun run start:debug` | Start in debug mode                       |
+| `bun run start:prod`  | Start in production mode                  |
+| `bun run lint`        | Lint and fix code                         |
+| `bun run format`      | Format code with Prettier                 |
+| `bun run test`        | Run unit tests                            |
+| `bun run test:e2e`    | Run end-to-end tests                      |
+| `bun run test:cov`    | Run tests with coverage                   |
+| `bun run seed`        | Run database seeders                      |
 
 ## Make Commands
 

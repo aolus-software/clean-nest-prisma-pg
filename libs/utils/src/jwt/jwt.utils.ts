@@ -1,4 +1,5 @@
 import * as jwt from "jsonwebtoken";
+import { getEnv } from "@config";
 
 export interface JWTPayload {
 	sub: string;
@@ -7,12 +8,10 @@ export interface JWTPayload {
 }
 
 export class JWTUtils {
-	private static readonly secret = process.env.JWT_SECRET || "default-secret";
-	private static readonly refreshSecret =
-		process.env.JWT_REFRESH_SECRET || "default-refresh-secret";
-	private static readonly expiresIn = process.env.JWT_EXPIRES_IN || "1h";
-	private static readonly refreshExpiresIn =
-		process.env.JWT_REFRESH_EXPIRES_IN || "7d";
+	private static readonly secret = getEnv().JWT_SECRET;
+	private static readonly refreshSecret = getEnv().JWT_REFRESH_SECRET;
+	private static readonly expiresIn = getEnv().JWT_EXPIRES_IN;
+	private static readonly refreshExpiresIn = getEnv().JWT_REFRESH_EXPIRES_IN;
 
 	static generateAccessToken(payload: Omit<JWTPayload, "iat" | "exp">): string {
 		return jwt.sign(

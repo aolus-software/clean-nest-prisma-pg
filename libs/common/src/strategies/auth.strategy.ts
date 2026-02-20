@@ -8,6 +8,7 @@ import {
 } from "@repositories/repositories/user.repository";
 import { JWTPayload } from "@utils";
 import { Strategy, ExtractJwt } from "passport-jwt";
+import { getEnv } from "@config";
 
 @Injectable()
 export class AuthStrategy extends PassportStrategy(Strategy, "jwt") {
@@ -17,7 +18,7 @@ export class AuthStrategy extends PassportStrategy(Strategy, "jwt") {
 			// eslint-disable-next-line
 			jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
 			ignoreExpiration: false,
-			secretOrKey: process.env.JWT_SECRET || "default-secret",
+			secretOrKey: getEnv().JWT_SECRET,
 		});
 	}
 

@@ -79,6 +79,9 @@ libs/
     strategies/         - Passport JWT strategy
     throttler/          - Rate limiting
     types/              - Shared TypeScript types
+  config/src/           - Application configuration
+    env/                - getEnv() - validated env vars via envalid
+    app/                - CorsConfig, HelmetConfig, swaggerConfig
   repositories/src/     - Database layer
     prisma/             - PrismaService
     repositories/       - UserRepository, RoleRepository, PermissionRepository
@@ -89,6 +92,7 @@ libs/
     string/             - StrUtils
     logger/             - LoggerUtils
     encryption/         - EncryptionUtils
+    default/            - Token lifetime helpers
 ```
 
 ## Path Aliases
@@ -99,10 +103,12 @@ Use the configured tsconfig path aliases for imports:
 import { CacheService, MailService, UserCache, AuthGuard, CurrentUser, ResponseHandler } from "@common";
 import { UserRepository, UserInformation, prisma } from "@repositories";
 import { HashUtils, JWTUtils, DateUtils, StrUtils, LoggerUtils } from "@utils";
+import { getEnv, CorsConfig, HelmetConfig, swaggerConfig } from "@config";
 ```
 
 **Available aliases:**
 - `@common` - Shared NestJS providers (guards, decorators, interceptors, response, cache, mail)
+- `@config` - App configuration (env validation, CORS, Helmet, Swagger)
 - `@repositories` - Database access layer (repositories, `prisma` client instance)
 - `@utils` - Utility functions (hash, jwt, date, string, logger, encryption)
 - `@generated/*` - Prisma generated types
@@ -396,9 +402,16 @@ LoggerUtils.error("Error occurred", error);
 
 ## Configuration
 
-- Use `@nestjs/config` for environment variables
+- Use `getEnv()` from `@config` to access validated environment variables
+- All env vars are validated at startup using `envalid` - required vars throw on missing values
 - Keep secrets in environment variables, never hardcoded
-- Validate required env vars at startup
+
+```typescript
+import { getEnv } from "@config";
+
+const port = getEnv().APP_PORT;
+const env = getEnv().NODE_ENV;
+```
 
 ## Code Organization
 
@@ -425,7 +438,7 @@ LoggerUtils.error("Error occurred", error);
 When generating code:
 
 1. Follow the existing NestJS module structure in `src/`
-2. Use `@common`, `@repositories`, `@utils` path aliases for all imports
+2. Use `@common`, `@config`, `@repositories`, `@utils` path aliases for all imports
 3. Use `ResponseHandler` for all HTTP responses in controllers
 4. Use `UnprocessableEntityException` for business validation errors
 5. Apply `@ApiResponse` and `@ApiStandardResponses` to all controller methods

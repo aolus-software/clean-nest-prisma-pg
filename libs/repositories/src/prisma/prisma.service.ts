@@ -2,15 +2,16 @@ import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { Injectable, OnModuleInit, OnModuleDestroy } from "@nestjs/common";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { getEnv } from "@config";
 
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
 	private adapter = new PrismaPg({
-		connectionString: process.env.DATABASE_URL || "",
+		connectionString: getEnv().DATABASE_URL,
 	});
 
 	constructor() {
-		if (!process.env.DATABASE_URL) {
+		if (!getEnv().DATABASE_URL) {
 			throw new Error("DATABASE_URL environment variable is not set.");
 		}
 	}

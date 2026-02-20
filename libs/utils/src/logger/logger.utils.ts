@@ -1,8 +1,9 @@
 import { Logger } from "@nestjs/common";
 import { DateUtils } from "../date/date.utils";
+import { getEnv } from "@config";
 
 export class LoggerUtils {
-	private static isDevelopment = process.env.APP_ENV === "development";
+	private static isDevelopment = getEnv().NODE_ENV === "development";
 	private static logger = new Logger("LoggerUtils");
 
 	static error(

@@ -3,6 +3,7 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import relativeTime from "dayjs/plugin/relativeTime";
 import advancedFormat from "dayjs/plugin/advancedFormat";
+import { getEnv } from "@config";
 
 // Initialize dayjs plugins
 dayjs.extend(utc);
@@ -13,7 +14,7 @@ dayjs.extend(advancedFormat);
 export class DateUtils {
 	private static _configuredTimezone: string = (() => {
 		try {
-			return process.env.APP_TIMEZONE ?? "UTC";
+			return getEnv().APP_TIMEZONE;
 		} catch {
 			return "UTC";
 		}

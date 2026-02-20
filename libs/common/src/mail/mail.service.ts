@@ -1,16 +1,15 @@
 import { InjectQueue } from "@nestjs/bullmq";
 import { Injectable } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import { Queue } from "bullmq";
 import { MailJobData } from "./mail.processor";
 import { MailerService } from "@nestjs-modules/mailer";
+import { getEnv } from "@config";
 
 @Injectable()
 export class MailService {
 	constructor(
 		@InjectQueue("mail-queue") private readonly _mailQueue: Queue,
 		private readonly _mailerService: MailerService,
-		private readonly _configService: ConfigService,
 	) {}
 
 	async sendMail(options: MailJobData): Promise<void> {
@@ -24,16 +23,8 @@ export class MailService {
 	}
 
 	private _enrichMailOptions(options: MailJobData): MailJobData {
-		let appName: string | undefined = this._configService.get("APP_NAME");
-		let appEnv: string | undefined = this._configService.get("APP_ENV");
-
-		if (!appName) {
-			appName = "Application";
-		}
-
-		if (!appEnv) {
-			appEnv = "development";
-		}
+		const appName: string = getEnv().APP_NAME;
+		const appEnv: string = getEnv().NODE_ENV;
 
 		let subject = options.subject;
 		if (subject && !subject.includes(appName)) {
@@ -46,13 +37,13 @@ export class MailService {
 
 		return {
 			...options,
-			from: options.from || this._configService.get("MAIL_FROM"),
+			from: options.from || getEnv().MAIL_FROM,
 			subject,
-			replyTo: options.replyTo || this._configService.get("MAIL_FROM"),
+			replyTo: options.replyTo || getEnv().MAIL_FROM,
 			context: {
 				...options.context,
-				appName: this._configService.get("APP_NAME"),
-				frontendUrl: this._configService.get("FRONTEND_URL"),
+				appName: appName,
+				frontendUrl: getEnv().FRONTEND_URL,
 			},
 		};
 	}

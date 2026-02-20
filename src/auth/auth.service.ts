@@ -1,7 +1,14 @@
 import { Injectable, UnprocessableEntityException } from "@nestjs/common";
 import { LoginDto } from "./dto/login.dto";
 import { prisma, UserInformation, UserRepository } from "@repositories";
-import { DateUtils, HashUtils, JWTUtils, StrUtils } from "@utils";
+import {
+	DateUtils,
+	emailVerificationLifetime,
+	HashUtils,
+	JWTUtils,
+	resetPasswordLifetime,
+	StrUtils,
+} from "@utils";
 import { CacheService, MailService, UserCache } from "@common";
 import { RegisterDto } from "./dto/register.dto";
 import { ResendEmailVerificationDto } from "./dto/resend-email-verification.dto";
@@ -9,6 +16,7 @@ import { EmailVerificationDto } from "./dto/email-verification.dto";
 import { ForgotPasswordDto } from "./dto/forgot-password.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { ResetPasswordTokenValidationDto } from "./dto/reset-password-token-validation.dto";
+import { getEnv } from "@config";
 
 @Injectable()
 export class AuthService {
@@ -117,7 +125,7 @@ export class AuthService {
 				data: {
 					userId: newUser.id,
 					token,
-					expiresAt: DateUtils.addHours(DateUtils.now(), 2).toDate(),
+					expiresAt: emailVerificationLifetime,
 				},
 			});
 
@@ -127,7 +135,7 @@ export class AuthService {
 				template: "auth/verify-email",
 				context: {
 					name: data.name,
-					verifyUrl: `${process.env.FRONTEND_URL}/verify-email?token=${token}`,
+					verifyUrl: `${getEnv().FRONTEND_URL}/verify-email?token=${token}`,
 				},
 			});
 		});
@@ -155,7 +163,7 @@ export class AuthService {
 			data: {
 				userId: user.id,
 				token,
-				expiresAt: DateUtils.addHours(DateUtils.now(), 2).toDate(),
+				expiresAt: emailVerificationLifetime,
 			},
 		});
 
@@ -165,7 +173,7 @@ export class AuthService {
 			template: "auth/verify-email",
 			context: {
 				name: user.name,
-				verifyUrl: `${process.env.FRONTEND_URL}/verify-email?token=${token}`,
+				verifyUrl: `${getEnv().FRONTEND_URL}/verify-email?token=${token}`,
 			},
 		});
 	}
@@ -241,7 +249,7 @@ export class AuthService {
 			data: {
 				userId: user.id,
 				token,
-				expiresAt: DateUtils.addHours(DateUtils.now(), 2).toDate(),
+				expiresAt: resetPasswordLifetime,
 			},
 		});
 
@@ -251,7 +259,7 @@ export class AuthService {
 			template: "auth/forgot-password",
 			context: {
 				name: user.name,
-				resetUrl: `${process.env.FRONTEND_URL}/reset-password?token=${token}`,
+				resetUrl: `${getEnv().FRONTEND_URL}/reset-password?token=${token}`,
 			},
 		});
 	}

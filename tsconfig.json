@@ -22,13 +22,15 @@
 		"strictBindCallApply": false,
 		"noFallthroughCasesInSwitch": false,
 		"paths": {
+			"@config": ["libs/config/src"],
+			"@config/*": ["libs/config/src/*"],
 			"@common": ["libs/common/src"],
 			"@common/*": ["libs/common/src/*"],
+			"@generated/*": ["generated/*"],
 			"@repositories": ["libs/repositories/src"],
 			"@repositories/*": ["libs/repositories/src/*"],
 			"@utils": ["libs/utils/src"],
-			"@utils/*": ["libs/utils/src/*"],
-			"@generated/*": ["generated/*"]
+			"@utils/*": ["libs/utils/src/*"]
 		},
 		"typeRoots": ["./node_modules/@types", "./libs/common/src/types"]
 	}

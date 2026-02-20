@@ -7,6 +7,7 @@ export * from "./default/allowed-file-uploads";
 export * from "./default/max-upload-file";
 export * from "./default/pagination-length";
 export * from "./default/sort";
+export * from "./default/token-lifetime";
 
 export * from "./encryption/encryption.utils";
 export * from "./hash/hash.utils";

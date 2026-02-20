@@ -1,13 +1,14 @@
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Inject, Injectable } from "@nestjs/common";
 import { Cache } from "cache-manager";
+import { getEnv } from "@config";
 
 @Injectable()
 export class CacheService {
 	constructor(@Inject(CACHE_MANAGER) private _cacheManager: Cache) {}
 
 	async set<T>(key: string, value: T, ttl: number | null): Promise<void> {
-		const ttlValue = ttl ? ttl : Number(process.env.REDIS_TTL || 3600);
+		const ttlValue = ttl ? ttl : getEnv().REDIS_TTL;
 		await this._cacheManager.set(key, value, ttlValue);
 	}
 

@@ -3,6 +3,7 @@ import { Controller, Get, Res } from "@nestjs/common";
 import { ApiOkResponse } from "@nestjs/swagger";
 import { DateUtils } from "@utils";
 import { FastifyReply } from "fastify";
+import { getEnv } from "@config";
 
 @Controller()
 export class AppController {
@@ -35,9 +36,9 @@ export class AppController {
 	})
 	getHello(@Res() res: FastifyReply): FastifyReply {
 		return res.send(
-			successResponse(200, `Welcome to ${process.env.APP_NAME}`, {
-				appName: process.env.APP_NAME,
-				appVersion: process.env.APP_VERSION,
+			successResponse(200, `Welcome to ${getEnv().APP_NAME}`, {
+				appName: getEnv().APP_NAME,
+				appVersion: getEnv().APP_VERSION,
 				timestamp: DateUtils.now().toISOString(),
 			}),
 		);

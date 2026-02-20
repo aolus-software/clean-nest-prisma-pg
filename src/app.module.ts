@@ -10,6 +10,7 @@ import { AuthStrategy, CommonModule, ThrottlerModule } from "@common";
 import { PrismaService } from "@repositories";
 import { SettingsModule } from "./settings/settings.module";
 import { HealthModule } from "./health/health.module";
+import { getEnv } from "@config";
 
 @Module({
 	imports: [
@@ -18,9 +19,9 @@ import { HealthModule } from "./health/health.module";
 		}),
 		PassportModule.register({ defaultStrategy: "jwt" }),
 		JwtModule.register({
-			secret: process.env.JWT_SECRET || "default-secret",
+			secret: getEnv().JWT_SECRET,
 			signOptions: {
-				expiresIn: process.env.JWT_EXPIRATION || "1d",
+				expiresIn: getEnv().JWT_EXPIRES_IN,
 			} as jwt.SignOptions,
 		}),
 
