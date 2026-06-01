@@ -2,6 +2,7 @@ import { DatatableType, PaginationResponse } from "@common";
 import { BadRequestException } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@repositories";
+import { I18nContext } from "nestjs-i18n";
 
 export interface PermissionList {
 	id: string;
@@ -29,18 +30,27 @@ export function PermissionRepository(tx?: Prisma.TransactionClient) {
 			const allowedFilter = ["id", "name", "group", "createdAt", "updatedAt"];
 
 			if (!allowedSort.includes(sort)) {
-				throw new BadRequestException("Invalid sort field");
+				throw new BadRequestException(
+					I18nContext.current()?.t("message.common.invalid_sort_field") ??
+						"Invalid sort field",
+				);
 			}
 
 			if (!sortDirectionAllowed.includes(sortDirection)) {
-				throw new BadRequestException("Invalid sort direction");
+				throw new BadRequestException(
+					I18nContext.current()?.t("message.common.invalid_sort_direction") ??
+						"Invalid sort direction",
+				);
 			}
 
 			if (queryParam.filter) {
 				const filterKeys = Object.keys(queryParam.filter);
 				for (const key of filterKeys) {
 					if (!allowedFilter.includes(key)) {
-						throw new BadRequestException("Invalid filter field");
+						throw new BadRequestException(
+							I18nContext.current()?.t("message.common.invalid_filter_field") ??
+								"Invalid filter field",
+						);
 					}
 				}
 			}

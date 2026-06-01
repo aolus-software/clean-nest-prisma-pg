@@ -7,6 +7,7 @@ import {
 import { Reflector } from "@nestjs/core";
 import { UserInformation } from "@repositories/repositories";
 import { FastifyRequest } from "fastify";
+import { I18nContext } from "nestjs-i18n";
 
 @Injectable()
 export class PermissionGuard implements CanActivate {
@@ -25,7 +26,10 @@ export class PermissionGuard implements CanActivate {
 		const request: FastifyRequest = context.switchToHttp().getRequest();
 		const user: UserInformation = request.user;
 		if (!user || !user.roles) {
-			throw new ForbiddenException("Access denied");
+			throw new ForbiddenException(
+				I18nContext.current()?.t("message.common.access_denied") ??
+					"Access denied",
+			);
 		}
 
 		if (user.roles.some((role) => role.name === "superuser")) {
@@ -37,7 +41,10 @@ export class PermissionGuard implements CanActivate {
 		);
 
 		if (!hasPermission) {
-			throw new ForbiddenException("Insufficient permissions");
+			throw new ForbiddenException(
+				I18nContext.current()?.t("message.common.insufficient_permission") ??
+					"Insufficient permissions",
+			);
 		}
 
 		return true;

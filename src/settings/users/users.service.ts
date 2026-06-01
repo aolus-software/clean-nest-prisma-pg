@@ -11,18 +11,22 @@ import { DateUtils, HashUtils, StrUtils } from "@utils";
 import { UpdatePasswordDto } from "./dto/update-password.dto";
 import { UpdateStatusDto } from "./dto/update-status.dto";
 import { getEnv } from "@config";
+import { I18nService } from "nestjs-i18n";
 
 @Injectable()
 export class UsersService {
-	constructor(private readonly mailService: MailService) {}
+	constructor(
+		private readonly mailService: MailService,
+		private readonly i18n: I18nService,
+	) {}
 
 	async create(createUserDto: CreateUserDto): Promise<void> {
 		const isEmailExist = await UserRepository().findByMail(createUserDto.email);
 		if (isEmailExist) {
 			throw new UnprocessableEntityException({
-				message: "Email already exists",
+				message: this.i18n.t("message.user.email_exists"),
 				error: {
-					email: ["Email already exists"],
+					email: [this.i18n.t("message.user.email_exists")],
 				},
 			});
 		}
@@ -49,7 +53,7 @@ export class UsersService {
 
 			// Send verification email
 			await this.mailService.sendMail({
-				subject: "Verify your email address",
+				subject: this.i18n.t("email.verify_email.subject"),
 				to: createUserDto.email,
 				template: "auth/verify-email",
 				context: {
@@ -71,9 +75,9 @@ export class UsersService {
 
 		if (user.emailVerifiedAt) {
 			throw new UnprocessableEntityException({
-				message: "Email is already verified",
+				message: this.i18n.t("message.user.email_already_verified"),
 				error: {
-					email: ["Email is already verified"],
+					email: [this.i18n.t("message.user.email_already_verified")],
 				},
 			});
 		}
@@ -88,7 +92,7 @@ export class UsersService {
 		});
 
 		await this.mailService.sendMail({
-			subject: "Verify your email address",
+			subject: this.i18n.t("email.verify_email.subject"),
 			to: user.email,
 			template: "auth/verify-email",
 			context: {
@@ -107,7 +111,9 @@ export class UsersService {
 	async findOne(id: string): Promise<UserDetail> {
 		const data = await UserRepository().findOne(id);
 		if (!data) {
-			throw new NotFoundException(`User with ID ${id} not found`);
+			throw new NotFoundException(
+				this.i18n.t("message.user.not_found", { args: { id } }),
+			);
 		}
 
 		return data;
@@ -116,15 +122,17 @@ export class UsersService {
 	async update(id: string, updateUserDto: UpdateUserDto): Promise<void> {
 		const data = await UserRepository().findOne(id);
 		if (!data) {
-			throw new NotFoundException(`User with ID ${id} not found`);
+			throw new NotFoundException(
+				this.i18n.t("message.user.not_found", { args: { id } }),
+			);
 		}
 
 		const isEmailExist = await UserRepository().findByMail(updateUserDto.email);
 		if (isEmailExist && isEmailExist.id !== id) {
 			throw new UnprocessableEntityException({
-				message: "Email already exists",
+				message: this.i18n.t("message.user.email_exists"),
 				error: {
-					email: ["Email already exists"],
+					email: [this.i18n.t("message.user.email_exists")],
 				},
 			});
 		}
@@ -144,7 +152,9 @@ export class UsersService {
 	async remove(id: string): Promise<void> {
 		const data = await UserRepository().findOne(id);
 		if (!data) {
-			throw new NotFoundException(`User with ID ${id} not found`);
+			throw new NotFoundException(
+				this.i18n.t("message.user.not_found", { args: { id } }),
+			);
 		}
 
 		await prisma.$transaction(async (tx) => {
@@ -160,7 +170,9 @@ export class UsersService {
 	async updateStatus(id: string, data: UpdateStatusDto): Promise<void> {
 		const user = await UserRepository().findOne(id);
 		if (!user) {
-			throw new NotFoundException(`User with ID ${id} not found`);
+			throw new NotFoundException(
+				this.i18n.t("message.user.not_found", { args: { id } }),
+			);
 		}
 
 		await prisma.user.update({
@@ -174,7 +186,9 @@ export class UsersService {
 	async updatePassword(id: string, data: UpdatePasswordDto): Promise<void> {
 		const user = await UserRepository().findOne(id);
 		if (!user) {
-			throw new NotFoundException(`User with ID ${id} not found`);
+			throw new NotFoundException(
+				this.i18n.t("message.user.not_found", { args: { id } }),
+			);
 		}
 
 		const hashedPassword = await HashUtils.generateHash(data.newPassword);
@@ -202,7 +216,7 @@ export class UsersService {
 		});
 
 		await this.mailService.sendMail({
-			subject: "Reset your password",
+			subject: this.i18n.t("email.forgot_password.subject"),
 			to: user.email,
 			template: "auth/forgot-password",
 			context: {

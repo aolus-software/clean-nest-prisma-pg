@@ -1,0 +1,8 @@
+{
+	"verify_email": {
+		"subject": "Verifikasi alamat email Anda"
+	},
+	"forgot_password": {
+		"subject": "Atur ulang kata sandi Anda"
+	}
+}

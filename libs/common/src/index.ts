@@ -11,6 +11,7 @@ export * from "./decorators/permission-auth/permission-auth.decorator";
 export * from "./guards/auth/auth.guard";
 export * from "./guards/role/role.guard";
 export * from "./guards/permission/permission.guard";
+export * from "./i18n/i18n.module";
 export * from "./interceptors/file-upload/file-upload.interceptor";
 export * from "./mail/mail.module";
 export * from "./mail/mail.service";

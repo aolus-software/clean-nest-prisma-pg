@@ -1,6 +1,7 @@
 import { HttpException, UnprocessableEntityException } from "@nestjs/common";
 import { LoggerUtils } from "@utils";
 import { FastifyReply } from "fastify";
+import { I18nContext } from "nestjs-i18n";
 
 export class SuccessResponse<T> {
 	constructor(
@@ -34,9 +35,15 @@ export class ResponseHandler {
 	}
 
 	static handleError(res: FastifyReply, error: unknown): FastifyReply {
+		const i18n = I18nContext.current();
+
 		if (error instanceof HttpException) {
 			if (error instanceof UnprocessableEntityException) {
-				const response = this.error(422, "Unprocessable Entity");
+				const response = this.error(
+					422,
+					i18n?.t("message.common.unprocessable_entity") ??
+						"Unprocessable Entity",
+				);
 				return res.status(422).send({
 					...response,
 					...(error.getResponse() as Record<string, unknown>),
@@ -51,7 +58,13 @@ export class ResponseHandler {
 				return res
 					.status(status)
 					.send(
-						this.error(status, msg.message ?? msg.error ?? "An error occurred"),
+						this.error(
+							status,
+							msg.message ??
+								msg.error ??
+								i18n?.t("message.common.error") ??
+								"An error occurred",
+						),
 					);
 			}
 
@@ -60,7 +73,14 @@ export class ResponseHandler {
 
 		LoggerUtils.error(`Internal server error`, error);
 
-		return res.status(500).send(this.error(500, "Internal Server Error"));
+		return res
+			.status(500)
+			.send(
+				this.error(
+					500,
+					i18n?.t("message.common.internal_error") ?? "Internal Server Error",
+				),
+			);
 	}
 }
 

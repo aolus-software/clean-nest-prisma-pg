@@ -17,10 +17,14 @@ import { ResetPasswordTokenValidationDto } from "./dto/reset-password-token-vali
 import { FastifyReply } from "fastify";
 import { ApiBearerAuth, ApiResponse } from "@nestjs/swagger";
 import { UserStatus } from "@prisma/client";
+import { I18nService } from "nestjs-i18n";
 
 @Controller("auth")
 export class AuthController {
-	constructor(private readonly authService: AuthService) {}
+	constructor(
+		private readonly authService: AuthService,
+		private readonly i18n: I18nService,
+	) {}
 
 	@Post("/login")
 	@ApiResponse({
@@ -104,7 +108,7 @@ export class AuthController {
 					user: UserInformation;
 					accessToken: string;
 					refreshToken: string;
-				}>(200, "Login successful", result),
+				}>(200, this.i18n.t("message.auth.login_success"), result),
 			);
 		} catch (error) {
 			ResponseHandler.handleError(res, error);
@@ -139,7 +143,7 @@ export class AuthController {
 				.send(
 					ResponseHandler.success(
 						201,
-						"Registration successful, please verify your email",
+						this.i18n.t("message.auth.register_success"),
 						null,
 					),
 				);
@@ -179,7 +183,7 @@ export class AuthController {
 				.send(
 					ResponseHandler.success(
 						200,
-						"Verification email resent successfully",
+						this.i18n.t("message.auth.resend_verification_success"),
 						null,
 					),
 				);
@@ -217,7 +221,11 @@ export class AuthController {
 			return res
 				.status(200)
 				.send(
-					ResponseHandler.success(200, "Email verified successfully", null),
+					ResponseHandler.success(
+						200,
+						this.i18n.t("message.auth.verify_email_success"),
+						null,
+					),
 				);
 		} catch (error) {
 			ResponseHandler.handleError(res, error);
@@ -255,7 +263,7 @@ export class AuthController {
 				.send(
 					ResponseHandler.success(
 						200,
-						"Password reset email sent successfully",
+						this.i18n.t("message.auth.forgot_password_success"),
 						null,
 					),
 				);
@@ -298,7 +306,7 @@ export class AuthController {
 				.send(
 					ResponseHandler.success(
 						200,
-						"Reset password token validation successful",
+						this.i18n.t("message.auth.reset_token_valid_success"),
 						{ isValid },
 					),
 				);
@@ -336,7 +344,11 @@ export class AuthController {
 			return res
 				.status(200)
 				.send(
-					ResponseHandler.success(200, "Password reset successfully", null),
+					ResponseHandler.success(
+						200,
+						this.i18n.t("message.auth.reset_password_success"),
+						null,
+					),
 				);
 		} catch (error) {
 			ResponseHandler.handleError(res, error);
@@ -414,7 +426,7 @@ export class AuthController {
 				.send(
 					ResponseHandler.success<UserInformation>(
 						200,
-						"Profile fetched successfully",
+						this.i18n.t("message.auth.profile_success"),
 						user,
 					),
 				);

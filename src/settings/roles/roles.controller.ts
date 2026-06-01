@@ -33,13 +33,17 @@ import {
 import { FastifyReply } from "fastify";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { ApiDatatableQueries } from "@common/decorators/api-datatable-queries/api-datatable-queries.decorator";
+import { I18nService } from "nestjs-i18n";
 
 @Controller("roles")
 @UseGuards(AuthGuard, PermissionGuard)
 @ApiTags("Settings/Roles")
 @ApiBearerAuth("Bearer")
 export class RolesController {
-	constructor(private readonly rolesService: RolesService) {}
+	constructor(
+		private readonly rolesService: RolesService,
+		private readonly i18n: I18nService,
+	) {}
 
 	@Post()
 	@PermissionAuth("role:create")
@@ -52,7 +56,7 @@ export class RolesController {
 			await this.rolesService.create(createRoleDto);
 			return ResponseHandler.success<void>(
 				201,
-				"Role created successfully",
+				this.i18n.t("message.role.create_success"),
 				undefined,
 			);
 		} catch (error) {
@@ -143,7 +147,7 @@ export class RolesController {
 			return res.send(
 				ResponseHandler.success<PaginationResponse<RoleList>>(
 					200,
-					"Roles fetched successfully",
+					this.i18n.t("message.role.retrieved_success"),
 					result,
 				),
 			);
@@ -177,7 +181,7 @@ export class RolesController {
 			const result = await this.rolesService.findOne(id);
 			return ResponseHandler.success<RoleDetail>(
 				200,
-				"Role fetched successfully",
+				this.i18n.t("message.role.found_success"),
 				result,
 			);
 		} catch (error) {
@@ -201,7 +205,7 @@ export class RolesController {
 			await this.rolesService.update(id, updateRoleDto);
 			return ResponseHandler.success<void>(
 				200,
-				"Role updated successfully",
+				this.i18n.t("message.role.update_success"),
 				undefined,
 			);
 		} catch (error) {
@@ -223,7 +227,7 @@ export class RolesController {
 			await this.rolesService.remove(id);
 			return ResponseHandler.success<void>(
 				200,
-				"Role deleted successfully",
+				this.i18n.t("message.role.delete_success"),
 				undefined,
 			);
 		} catch (error) {

@@ -17,12 +17,14 @@ import { ForgotPasswordDto } from "./dto/forgot-password.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { ResetPasswordTokenValidationDto } from "./dto/reset-password-token-validation.dto";
 import { getEnv } from "@config";
+import { I18nService } from "nestjs-i18n";
 
 @Injectable()
 export class AuthService {
 	constructor(
 		private readonly cacheService: CacheService,
 		private readonly mailService: MailService,
+		private readonly i18n: I18nService,
 	) {}
 
 	async login(data: LoginDto): Promise<{
@@ -33,18 +35,18 @@ export class AuthService {
 		const user = await UserRepository().findByMail(data.email);
 		if (!user) {
 			throw new UnprocessableEntityException({
-				message: "Invalid email or password",
+				message: this.i18n.t("message.auth.invalid_credentials"),
 				error: {
-					email: ["Invalid email or password"],
+					email: [this.i18n.t("message.auth.invalid_credentials")],
 				},
 			});
 		}
 
 		if (!user.emailVerifiedAt) {
 			throw new UnprocessableEntityException({
-				message: "Please verify your email to proceed",
+				message: this.i18n.t("message.auth.verify_email_required"),
 				error: {
-					email: ["Please verify your email to proceed"],
+					email: [this.i18n.t("message.auth.verify_email_required")],
 				},
 			});
 		}
@@ -55,9 +57,9 @@ export class AuthService {
 		);
 		if (!isPasswordValid) {
 			throw new UnprocessableEntityException({
-				message: "Invalid email or password",
+				message: this.i18n.t("message.auth.invalid_credentials"),
 				error: {
-					email: ["Invalid email or password"],
+					email: [this.i18n.t("message.auth.invalid_credentials")],
 				},
 			});
 		}
@@ -67,9 +69,9 @@ export class AuthService {
 		const userInformation = await UserRepository().userInformation(user.id);
 		if (!userInformation) {
 			throw new UnprocessableEntityException({
-				message: "User information could not be retrieved",
+				message: this.i18n.t("message.auth.user_info_failed"),
 				error: {
-					user: ["User information could not be retrieved"],
+					user: [this.i18n.t("message.auth.user_info_failed")],
 				},
 			});
 		}
@@ -94,18 +96,18 @@ export class AuthService {
 		const isEmailExist = await UserRepository().findByMail(data.email);
 		if (isEmailExist && isEmailExist.emailVerifiedAt !== null) {
 			throw new UnprocessableEntityException({
-				message: "Email already in use",
+				message: this.i18n.t("message.auth.email_in_use"),
 				error: {
-					email: ["Email already in use"],
+					email: [this.i18n.t("message.auth.email_in_use")],
 				},
 			});
 		}
 
 		if (isEmailExist && isEmailExist.emailVerifiedAt === null) {
 			throw new UnprocessableEntityException({
-				message: "Please verify your email to complete registration",
+				message: this.i18n.t("message.auth.verify_to_complete"),
 				error: {
-					email: ["Please verify your email to complete registration"],
+					email: [this.i18n.t("message.auth.verify_to_complete")],
 				},
 			});
 		}
@@ -130,7 +132,7 @@ export class AuthService {
 			});
 
 			await this.mailService.sendMail({
-				subject: "Verify your email address",
+				subject: this.i18n.t("email.verify_email.subject"),
 				to: data.email,
 				template: "auth/verify-email",
 				context: {
@@ -151,9 +153,9 @@ export class AuthService {
 
 		if (user.emailVerifiedAt) {
 			throw new UnprocessableEntityException({
-				message: "Email is already verified",
+				message: this.i18n.t("message.auth.email_already_verified"),
 				error: {
-					email: ["Email is already verified"],
+					email: [this.i18n.t("message.auth.email_already_verified")],
 				},
 			});
 		}
@@ -168,7 +170,7 @@ export class AuthService {
 		});
 
 		await this.mailService.sendMail({
-			subject: "Verify your email address",
+			subject: this.i18n.t("email.verify_email.subject"),
 			to: user.email,
 			template: "auth/verify-email",
 			context: {
@@ -186,18 +188,18 @@ export class AuthService {
 
 		if (!emailVerification) {
 			throw new UnprocessableEntityException({
-				message: "Invalid or expired verification token",
+				message: this.i18n.t("message.auth.invalid_verification_token"),
 				error: {
-					token: ["Invalid or expired verification token"],
+					token: [this.i18n.t("message.auth.invalid_verification_token")],
 				},
 			});
 		}
 
 		if (emailVerification.usedAt) {
 			throw new UnprocessableEntityException({
-				message: "Invalid or expired verification token",
+				message: this.i18n.t("message.auth.invalid_verification_token"),
 				error: {
-					token: ["Invalid or expired verification token"],
+					token: [this.i18n.t("message.auth.invalid_verification_token")],
 				},
 			});
 		}
@@ -209,9 +211,9 @@ export class AuthService {
 
 		if (now.isAfter(expiredAt)) {
 			throw new UnprocessableEntityException({
-				message: "Invalid or expired verification token",
+				message: this.i18n.t("message.auth.invalid_verification_token"),
 				error: {
-					token: ["Invalid or expired verification token"],
+					token: [this.i18n.t("message.auth.invalid_verification_token")],
 				},
 			});
 		}
@@ -237,9 +239,9 @@ export class AuthService {
 
 		if (!user.emailVerifiedAt) {
 			throw new UnprocessableEntityException({
-				message: "Please verify your email to proceed",
+				message: this.i18n.t("message.auth.verify_email_required"),
 				error: {
-					email: ["Please verify your email to proceed"],
+					email: [this.i18n.t("message.auth.verify_email_required")],
 				},
 			});
 		}
@@ -255,7 +257,7 @@ export class AuthService {
 
 		await this.mailService.sendMail({
 			to: user.email,
-			subject: "Reset your password",
+			subject: this.i18n.t("email.forgot_password.subject"),
 			template: "auth/forgot-password",
 			context: {
 				name: user.name,
@@ -297,18 +299,18 @@ export class AuthService {
 
 		if (!resetPassword) {
 			throw new UnprocessableEntityException({
-				message: "Invalid or expired reset token",
+				message: this.i18n.t("message.auth.invalid_reset_token"),
 				error: {
-					token: ["Invalid or expired reset token"],
+					token: [this.i18n.t("message.auth.invalid_reset_token")],
 				},
 			});
 		}
 
 		if (resetPassword.usedAt) {
 			throw new UnprocessableEntityException({
-				message: "Invalid or expired reset token",
+				message: this.i18n.t("message.auth.invalid_reset_token"),
 				error: {
-					token: ["Invalid or expired reset token"],
+					token: [this.i18n.t("message.auth.invalid_reset_token")],
 				},
 			});
 		}
@@ -318,9 +320,9 @@ export class AuthService {
 
 		if (now.isAfter(expiredAt)) {
 			throw new UnprocessableEntityException({
-				message: "Invalid or expired reset token",
+				message: this.i18n.t("message.auth.invalid_reset_token"),
 				error: {
-					token: ["Invalid or expired reset token"],
+					token: [this.i18n.t("message.auth.invalid_reset_token")],
 				},
 			});
 		}

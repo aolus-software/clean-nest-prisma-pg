@@ -5,10 +5,11 @@ import {
 	IsString,
 	IsStrongPassword,
 } from "class-validator";
+import { i18nValidationMessage } from "nestjs-i18n";
 
 export class RegisterDto {
-	@IsString()
-	@IsNotEmpty()
+	@IsString({ message: i18nValidationMessage("validation.IS_STRING") })
+	@IsNotEmpty({ message: i18nValidationMessage("validation.NOT_EMPTY") })
 	@ApiProperty({
 		description: "Full name of the user",
 		example: "John Doe",
@@ -16,9 +17,9 @@ export class RegisterDto {
 	})
 	name: string;
 
-	@IsString()
-	@IsNotEmpty()
-	@IsEmail()
+	@IsString({ message: i18nValidationMessage("validation.IS_STRING") })
+	@IsNotEmpty({ message: i18nValidationMessage("validation.NOT_EMPTY") })
+	@IsEmail({}, { message: i18nValidationMessage("validation.IS_EMAIL") })
 	@ApiProperty({
 		description: "User email address",
 		example: "someuser@example.com",
@@ -27,9 +28,12 @@ export class RegisterDto {
 	})
 	email: string;
 
-	@IsString()
-	@IsNotEmpty()
-	@IsStrongPassword()
+	@IsString({ message: i18nValidationMessage("validation.IS_STRING") })
+	@IsNotEmpty({ message: i18nValidationMessage("validation.NOT_EMPTY") })
+	@IsStrongPassword(
+		{},
+		{ message: i18nValidationMessage("validation.IS_STRONG_PASSWORD") },
+	)
 	@ApiProperty({
 		description: "User password",
 		example: "strongPassword123!",

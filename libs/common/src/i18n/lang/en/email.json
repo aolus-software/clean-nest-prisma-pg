@@ -1,0 +1,8 @@
+{
+	"verify_email": {
+		"subject": "Verify your email address"
+	},
+	"forgot_password": {
+		"subject": "Reset your password"
+	}
+}

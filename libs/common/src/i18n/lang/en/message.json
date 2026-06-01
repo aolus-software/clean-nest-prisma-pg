@@ -1,0 +1,74 @@
+{
+	"common": {
+		"success": "Success",
+		"internal_error": "Internal Server Error",
+		"error": "An error occurred",
+		"unprocessable_entity": "Unprocessable Entity",
+		"unauthorized": "Unauthorized",
+		"forbidden": "Forbidden",
+		"not_found": "Resource not found",
+		"access_denied": "Access denied",
+		"insufficient_permission": "Insufficient permissions",
+		"user_not_found": "User not found",
+		"file_required": "File is required",
+		"unsupported_file_type": "Unsupported file type",
+		"invalid_sort_field": "Invalid sort field",
+		"invalid_sort_direction": "Invalid sort direction",
+		"invalid_filter_field": "Invalid filter field"
+	},
+	"app": {
+		"welcome": "Welcome to {appName}"
+	},
+	"auth": {
+		"login_success": "Login successful",
+		"register_success": "Registration successful, please verify your email",
+		"resend_verification_success": "Verification email resent successfully",
+		"verify_email_success": "Email verified successfully",
+		"forgot_password_success": "Password reset email sent successfully",
+		"reset_token_valid_success": "Reset password token validation successful",
+		"reset_password_success": "Password reset successfully",
+		"profile_success": "Profile fetched successfully",
+		"invalid_credentials": "Invalid email or password",
+		"verify_email_required": "Please verify your email to proceed",
+		"account_inactive": "Your account is not active",
+		"user_info_failed": "User information could not be retrieved",
+		"email_in_use": "Email already in use",
+		"verify_to_complete": "Please verify your email to complete registration",
+		"registration_failed": "Registration failed",
+		"email_already_verified": "Email is already verified",
+		"invalid_verification_token": "Invalid or expired verification token",
+		"invalid_reset_token": "Invalid or expired reset token"
+	},
+	"user": {
+		"create_success": "User created successfully",
+		"retrieved_success": "Users retrieved successfully",
+		"found_success": "User found successfully",
+		"update_success": "User updated successfully",
+		"status_update_success": "User status updated successfully",
+		"password_update_success": "User password updated successfully",
+		"delete_success": "User deleted successfully",
+		"resend_verification_success": "Verification email resent successfully",
+		"not_found": "User with ID {id} not found",
+		"email_exists": "Email already exists",
+		"not_created": "User not created",
+		"email_already_verified": "Email is already verified"
+	},
+	"role": {
+		"create_success": "Role created successfully",
+		"retrieved_success": "Roles fetched successfully",
+		"found_success": "Role fetched successfully",
+		"update_success": "Role updated successfully",
+		"delete_success": "Role deleted successfully",
+		"not_found": "Role not found",
+		"name_exists": "Role name already exists",
+		"permissions_invalid": "One or more permissions do not exist"
+	},
+	"permission": {
+		"create_success": "Permission(s) created successfully",
+		"retrieved_success": "Permissions retrieved successfully",
+		"found_success": "Permission retrieved successfully",
+		"update_success": "Permission updated successfully",
+		"delete_success": "Permission deleted successfully",
+		"not_found": "Permission with ID {id} not found"
+	}
+}

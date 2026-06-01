@@ -1,0 +1,9 @@
+{
+	"NOT_EMPTY": "Kolom {property} wajib diisi.",
+	"IS_STRING": "Kolom {property} harus berupa teks.",
+	"IS_EMAIL": "Kolom {property} harus berupa alamat email yang valid.",
+	"IS_STRONG_PASSWORD": "Kolom {property} harus berupa kata sandi yang kuat (minimal 8 karakter dengan huruf besar, huruf kecil, angka, dan simbol).",
+	"IS_ENUM": "Kolom {property} memiliki nilai yang tidak valid.",
+	"IS_ARRAY": "Kolom {property} harus berupa array.",
+	"IS_UUID": "Kolom {property} harus berupa UUID yang valid."
+}

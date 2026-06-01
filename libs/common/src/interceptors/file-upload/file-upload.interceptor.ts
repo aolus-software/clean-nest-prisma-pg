@@ -11,6 +11,7 @@ import { extname, join } from "path";
 import { FastifyRequest } from "fastify";
 import { MultipartFile } from "@fastify/multipart";
 import { allowedImageMimeTypes } from "@utils";
+import { I18nContext } from "nestjs-i18n";
 export interface UploadedFileInfo {
 	filename: string;
 	filepath: string;
@@ -41,7 +42,10 @@ export class FileUploadInterceptor implements NestInterceptor {
 		const file: MultipartFile | undefined = await request.file();
 
 		if (!file) {
-			throw new UnprocessableEntityException("File is required");
+			throw new UnprocessableEntityException(
+				I18nContext.current()?.t("message.common.file_required") ??
+					"File is required",
+			);
 		}
 
 		const allowedMimeTypes = this.options.allowedMimeTypes?.length
@@ -50,7 +54,9 @@ export class FileUploadInterceptor implements NestInterceptor {
 
 		if (!allowedMimeTypes.includes(file.mimetype)) {
 			throw new UnprocessableEntityException({
-				message: "Unsupported file type",
+				message:
+					I18nContext.current()?.t("message.common.unsupported_file_type") ??
+					"Unsupported file type",
 				error: {
 					mimeType: [
 						`Unsupported ${file.mimetype}, expected one of: ${allowedMimeTypes.join(

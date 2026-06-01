@@ -38,13 +38,17 @@ import {
 	ApiTags,
 } from "@nestjs/swagger";
 import { ApiDatatableQueries } from "@common/decorators/api-datatable-queries/api-datatable-queries.decorator";
+import { I18nService } from "nestjs-i18n";
 
 @Controller("users")
 @UseGuards(AuthGuard, PermissionGuard, RoleGuard)
 @ApiTags("Settings/Users")
 @ApiBearerAuth("Bearer")
 export class UsersController {
-	constructor(private readonly usersService: UsersService) {}
+	constructor(
+		private readonly usersService: UsersService,
+		private readonly i18n: I18nService,
+	) {}
 
 	@Post()
 	@PermissionAuth("user:create")
@@ -63,7 +67,7 @@ export class UsersController {
 			await this.usersService.create(createUserDto);
 			return ResponseHandler.success<void>(
 				201,
-				"User created successfully",
+				this.i18n.t("message.user.create_success"),
 				undefined,
 			);
 		} catch (error) {
@@ -87,7 +91,7 @@ export class UsersController {
 			await this.usersService.resendVerificationEmail(id);
 			return ResponseHandler.success<void>(
 				200,
-				"Email verified successfully",
+				this.i18n.t("message.user.resend_verification_success"),
 				undefined,
 			);
 		} catch (error) {
@@ -142,7 +146,7 @@ export class UsersController {
 			const users = await this.usersService.findAll(query);
 			return ResponseHandler.success(
 				200,
-				"Users retrieved successfully",
+				this.i18n.t("message.user.retrieved_success"),
 				users,
 			);
 		} catch (error) {
@@ -159,7 +163,11 @@ export class UsersController {
 	async findOne(@Param("id") id: string, @Res() res: FastifyReply) {
 		try {
 			const user = await this.usersService.findOne(id);
-			return ResponseHandler.success(200, "User found successfully", user);
+			return ResponseHandler.success(
+				200,
+				this.i18n.t("message.user.found_success"),
+				user,
+			);
 		} catch (error) {
 			return ResponseHandler.handleError(res, error);
 		}
@@ -177,7 +185,7 @@ export class UsersController {
 			await this.usersService.update(id, updateUserDto);
 			return ResponseHandler.success<void>(
 				200,
-				"User updated successfully",
+				this.i18n.t("message.user.update_success"),
 				undefined,
 			);
 		} catch (error) {
@@ -197,7 +205,7 @@ export class UsersController {
 			await this.usersService.updateStatus(id, updateStatusDto);
 			return ResponseHandler.success<void>(
 				200,
-				"User status updated successfully",
+				this.i18n.t("message.user.status_update_success"),
 				undefined,
 			);
 		} catch (error) {
@@ -217,7 +225,7 @@ export class UsersController {
 			await this.usersService.updatePassword(id, updatePasswordDto);
 			return ResponseHandler.success<void>(
 				200,
-				"User password updated successfully",
+				this.i18n.t("message.user.password_update_success"),
 				undefined,
 			);
 		} catch (error) {
@@ -236,7 +244,7 @@ export class UsersController {
 			await this.usersService.remove(id);
 			return ResponseHandler.success<void>(
 				200,
-				"User deleted successfully",
+				this.i18n.t("message.user.delete_success"),
 				undefined,
 			);
 		} catch (error) {

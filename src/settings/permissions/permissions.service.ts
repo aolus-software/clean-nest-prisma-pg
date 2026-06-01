@@ -4,9 +4,12 @@ import { UpdatePermissionDto } from "./dto/update-permission.dto";
 import { PermissionList, PermissionRepository, prisma } from "@repositories";
 import { Prisma } from "@prisma/client";
 import { DatatableType, PaginationResponse } from "@common";
+import { I18nService } from "nestjs-i18n";
 
 @Injectable()
 export class PermissionsService {
+	constructor(private readonly i18n: I18nService) {}
+
 	async create(createPermissionDto: CreatePermissionDto): Promise<void> {
 		await prisma.$transaction(async (tx) => {
 			const permissionData: Prisma.PermissionCreateInput[] =
@@ -31,7 +34,9 @@ export class PermissionsService {
 	async findOne(id: string): Promise<PermissionList> {
 		const data = await PermissionRepository().findOne(id);
 		if (!data) {
-			throw new NotFoundException(`Permission with ID ${id} not found`);
+			throw new NotFoundException(
+				this.i18n.t("message.permission.not_found", { args: { id } }),
+			);
 		}
 
 		return data;
@@ -46,7 +51,9 @@ export class PermissionsService {
 				where: { id },
 			});
 			if (!existingPermission) {
-				throw new NotFoundException(`Permission with ID ${id} not found`);
+				throw new NotFoundException(
+					this.i18n.t("message.permission.not_found", { args: { id } }),
+				);
 			}
 
 			const updatedName = `${updatePermissionDto.name}:${updatePermissionDto.group}`;
@@ -66,7 +73,9 @@ export class PermissionsService {
 				where: { id },
 			});
 			if (!existingPermission) {
-				throw new NotFoundException(`Permission with ID ${id} not found`);
+				throw new NotFoundException(
+					this.i18n.t("message.permission.not_found", { args: { id } }),
+				);
 			}
 
 			await tx.permission.delete({

@@ -3,6 +3,7 @@ import { BadRequestException } from "@nestjs/common";
 import { Prisma, UserStatus } from "@prisma/client";
 import { prisma } from "@repositories";
 import { DateUtils } from "@utils";
+import { I18nContext } from "nestjs-i18n";
 
 export interface UserInformation {
 	id: string;
@@ -66,18 +67,27 @@ export function UserRepository(tx?: Prisma.TransactionClient) {
 			];
 
 			if (!allowedSort.includes(sort)) {
-				throw new BadRequestException("Invalid sort field");
+				throw new BadRequestException(
+					I18nContext.current()?.t("message.common.invalid_sort_field") ??
+						"Invalid sort field",
+				);
 			}
 
 			if (!sortDirectionAllowed.includes(sortDirection)) {
-				throw new BadRequestException("Invalid sort direction");
+				throw new BadRequestException(
+					I18nContext.current()?.t("message.common.invalid_sort_direction") ??
+						"Invalid sort direction",
+				);
 			}
 
 			if (queryParam.filter) {
 				const filterKeys = Object.keys(queryParam.filter);
 				for (const key of filterKeys) {
 					if (!allowedFilter.includes(key)) {
-						throw new BadRequestException("Invalid filter field");
+						throw new BadRequestException(
+							I18nContext.current()?.t("message.common.invalid_filter_field") ??
+								"Invalid filter field",
+						);
 					}
 				}
 			}

@@ -61,6 +61,7 @@
 		"handlebars": "^4.7.9",
 		"ioredis": "^5.11.0",
 		"lint-staged": "^17.0.7",
+		"nestjs-i18n": "^10.8.4",
 		"nodemailer": "^8.0.10",
 		"passport": "^0.7.0",
 		"passport-jwt": "^4.0.1",

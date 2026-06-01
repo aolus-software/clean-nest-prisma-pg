@@ -1,0 +1,9 @@
+{
+	"NOT_EMPTY": "The {property} field is required.",
+	"IS_STRING": "The {property} field must be a string.",
+	"IS_EMAIL": "The {property} field must be a valid email address.",
+	"IS_STRONG_PASSWORD": "The {property} field must be a strong password (at least 8 characters with uppercase, lowercase, number, and symbol).",
+	"IS_ENUM": "The {property} field has an invalid value.",
+	"IS_ARRAY": "The {property} field must be an array.",
+	"IS_UUID": "The {property} field must be a valid UUID."
+}

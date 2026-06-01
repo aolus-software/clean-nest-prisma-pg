@@ -30,6 +30,7 @@ import { defaultSort, paginationLength } from "@utils";
 import { FastifyReply } from "fastify";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { ApiDatatableQueries } from "@common/decorators/api-datatable-queries/api-datatable-queries.decorator";
+import { I18nService } from "nestjs-i18n";
 
 @Controller("permissions")
 @UseGuards(AuthGuard, RoleGuard)
@@ -37,7 +38,10 @@ import { ApiDatatableQueries } from "@common/decorators/api-datatable-queries/ap
 @ApiTags("Settings/Permissions")
 @ApiBearerAuth("Bearer")
 export class PermissionsController {
-	constructor(private readonly permissionsService: PermissionsService) {}
+	constructor(
+		private readonly permissionsService: PermissionsService,
+		private readonly i18n: I18nService,
+	) {}
 
 	@Post()
 	@ApiSuccessResponse(201, "Permission(s) created successfully", null, {
@@ -55,7 +59,7 @@ export class PermissionsController {
 				.send(
 					ResponseHandler.success<void>(
 						201,
-						"Permission(s) created successfully",
+						this.i18n.t("message.permission.create_success"),
 						undefined,
 					),
 				);
@@ -147,7 +151,7 @@ export class PermissionsController {
 				.send(
 					ResponseHandler.success<PaginationResponse<PermissionList>>(
 						200,
-						"Permissions retrieved successfully",
+						this.i18n.t("message.permission.retrieved_success"),
 						result,
 					),
 				);
@@ -190,7 +194,7 @@ export class PermissionsController {
 				.send(
 					ResponseHandler.success<PermissionList>(
 						200,
-						"Permission retrieved successfully",
+						this.i18n.t("message.permission.found_success"),
 						data,
 					),
 				);
@@ -217,7 +221,7 @@ export class PermissionsController {
 				.send(
 					ResponseHandler.success<void>(
 						200,
-						"Permission updated successfully",
+						this.i18n.t("message.permission.update_success"),
 						undefined,
 					),
 				);
@@ -242,7 +246,7 @@ export class PermissionsController {
 				.send(
 					ResponseHandler.success<void>(
 						200,
-						"Permission deleted successfully",
+						this.i18n.t("message.permission.delete_success"),
 						undefined,
 					),
 				);

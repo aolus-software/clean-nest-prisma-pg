@@ -1,0 +1,74 @@
+{
+	"common": {
+		"success": "Berhasil",
+		"internal_error": "Terjadi kesalahan pada server",
+		"error": "Terjadi kesalahan",
+		"unprocessable_entity": "Entitas tidak dapat diproses",
+		"unauthorized": "Tidak terautentikasi",
+		"forbidden": "Akses ditolak",
+		"not_found": "Sumber daya tidak ditemukan",
+		"access_denied": "Akses ditolak",
+		"insufficient_permission": "Hak akses tidak mencukupi",
+		"user_not_found": "Pengguna tidak ditemukan",
+		"file_required": "Berkas wajib diunggah",
+		"unsupported_file_type": "Tipe berkas tidak didukung",
+		"invalid_sort_field": "Kolom pengurutan tidak valid",
+		"invalid_sort_direction": "Arah pengurutan tidak valid",
+		"invalid_filter_field": "Kolom filter tidak valid"
+	},
+	"app": {
+		"welcome": "Selamat datang di {appName}"
+	},
+	"auth": {
+		"login_success": "Berhasil masuk",
+		"register_success": "Pendaftaran berhasil, silakan verifikasi email Anda",
+		"resend_verification_success": "Email verifikasi berhasil dikirim ulang",
+		"verify_email_success": "Email berhasil diverifikasi",
+		"forgot_password_success": "Email atur ulang kata sandi berhasil dikirim",
+		"reset_token_valid_success": "Validasi token atur ulang kata sandi berhasil",
+		"reset_password_success": "Kata sandi berhasil diatur ulang",
+		"profile_success": "Profil berhasil diambil",
+		"invalid_credentials": "Email atau kata sandi salah",
+		"verify_email_required": "Silakan verifikasi email Anda untuk melanjutkan",
+		"account_inactive": "Akun Anda tidak aktif",
+		"user_info_failed": "Informasi pengguna tidak dapat diambil",
+		"email_in_use": "Email sudah digunakan",
+		"verify_to_complete": "Silakan verifikasi email Anda untuk menyelesaikan pendaftaran",
+		"registration_failed": "Pendaftaran gagal",
+		"email_already_verified": "Email sudah diverifikasi",
+		"invalid_verification_token": "Token verifikasi tidak valid atau telah kedaluwarsa",
+		"invalid_reset_token": "Token atur ulang tidak valid atau telah kedaluwarsa"
+	},
+	"user": {
+		"create_success": "Pengguna berhasil dibuat",
+		"retrieved_success": "Daftar pengguna berhasil diambil",
+		"found_success": "Pengguna berhasil ditemukan",
+		"update_success": "Pengguna berhasil diperbarui",
+		"status_update_success": "Status pengguna berhasil diperbarui",
+		"password_update_success": "Kata sandi pengguna berhasil diperbarui",
+		"delete_success": "Pengguna berhasil dihapus",
+		"resend_verification_success": "Email verifikasi berhasil dikirim ulang",
+		"not_found": "Pengguna dengan ID {id} tidak ditemukan",
+		"email_exists": "Email sudah terdaftar",
+		"not_created": "Pengguna gagal dibuat",
+		"email_already_verified": "Email sudah diverifikasi"
+	},
+	"role": {
+		"create_success": "Peran berhasil dibuat",
+		"retrieved_success": "Daftar peran berhasil diambil",
+		"found_success": "Peran berhasil diambil",
+		"update_success": "Peran berhasil diperbarui",
+		"delete_success": "Peran berhasil dihapus",
+		"not_found": "Peran tidak ditemukan",
+		"name_exists": "Nama peran sudah digunakan",
+		"permissions_invalid": "Satu atau beberapa hak akses tidak ada"
+	},
+	"permission": {
+		"create_success": "Hak akses berhasil dibuat",
+		"retrieved_success": "Daftar hak akses berhasil diambil",
+		"found_success": "Hak akses berhasil diambil",
+		"update_success": "Hak akses berhasil diperbarui",
+		"delete_success": "Hak akses berhasil dihapus",
+		"not_found": "Hak akses dengan ID {id} tidak ditemukan"
+	}
+}

@@ -4,6 +4,7 @@ import { Queue } from "bullmq";
 import { MailJobData } from "./mail.processor";
 import { MailerService } from "@nestjs-modules/mailer";
 import { getEnv } from "@config";
+import { I18nContext } from "nestjs-i18n";
 
 @Injectable()
 export class MailService {
@@ -40,11 +41,25 @@ export class MailService {
 			from: options.from || getEnv().MAIL_FROM,
 			subject,
 			replyTo: options.replyTo || getEnv().MAIL_FROM,
+			template: this._localizedTemplate(options.template),
 			context: {
 				...options.context,
 				appName: appName,
 				frontendUrl: getEnv().FRONTEND_URL,
 			},
 		};
+	}
+
+	/* Resolves the Handlebars template against the active request language by
+	   prefixing it with the locale directory (e.g. "auth/verify-email" becomes
+	   "en/auth/verify-email"). Falls back to "en" outside a request context,
+	   such as when a job is processed by the queue worker. */
+	private _localizedTemplate(template?: string): string | undefined {
+		if (!template) {
+			return template;
+		}
+
+		const lang = I18nContext.current()?.lang ?? "en";
+		return `${lang}/${template}`;
 	}
 }
