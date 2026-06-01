@@ -1,0 +1,6 @@
+dist
+node_modules
+coverage
+uploads
+.agents
+.claude

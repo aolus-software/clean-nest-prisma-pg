@@ -11,6 +11,8 @@ export default tseslint.config(
 		ignores: [
 			"eslint.config.mjs",
 			"dist/**/*",
+			".agents/**/*",
+			".claude/**/*",
 			"**/*.interface.ts",
 			"**/interface/**/*",
 			"**/interfaces/**/*",
