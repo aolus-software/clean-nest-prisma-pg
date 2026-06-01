@@ -2,8 +2,10 @@ import { Module } from "@nestjs/common";
 import {
 	ThrottlerModule as NodeThrottlerModule,
 	seconds,
+	ThrottlerGuard,
 } from "@nestjs/throttler";
 import { getEnv } from "@config";
+import { APP_GUARD } from "@nestjs/core";
 
 @Module({
 	imports: [
@@ -15,6 +17,13 @@ import { getEnv } from "@config";
 				},
 			],
 		}),
+	],
+
+	providers: [
+		{
+			provide: APP_GUARD,
+			useClass: ThrottlerGuard,
+		},
 	],
 
 	exports: [ThrottlerModule],
