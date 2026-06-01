@@ -84,11 +84,11 @@ jobs:
       - name: Check formatting
         run: bun run format
 
-      - name: Run linter
-        run: bun run lint:fix
-
       - name: Generate Prisma client
         run: bunx --bun prisma generate
+
+      - name: Run linter
+        run: bun run lint:fix
 
       - name: Validate Prisma schema
         run: bunx --bun prisma validate
