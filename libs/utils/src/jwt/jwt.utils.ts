@@ -37,7 +37,7 @@ export class JWTUtils {
 
 	static verifyAccessToken(token: string): JWTPayload {
 		try {
-			return jwt.verify(token, this.secret as jwt.Secret) as JWTPayload;
+			return jwt.verify(token, this.secret) as JWTPayload;
 		} catch {
 			throw new Error("Invalid access token");
 		}
@@ -45,7 +45,7 @@ export class JWTUtils {
 
 	static verifyRefreshToken(token: string): JWTPayload {
 		try {
-			return jwt.verify(token, this.refreshSecret as jwt.Secret) as JWTPayload;
+			return jwt.verify(token, this.refreshSecret) as JWTPayload;
 		} catch {
 			throw new Error("Invalid refresh token");
 		}

@@ -24,7 +24,6 @@ import {
 	PermissionAuth,
 	PermissionGuard,
 	ResponseHandler,
-	SortDirection,
 } from "@common";
 import { defaultSort, paginationLength } from "@utils";
 import {
@@ -137,9 +136,7 @@ export class RolesController {
 				limit: limit || paginationLength,
 				search: search || null,
 				sort: sort || defaultSort,
-				sortDirection: (sortDirection === "asc"
-					? "asc"
-					: "desc") as SortDirection,
+				sortDirection: sortDirection === "asc" ? "asc" : "desc",
 				filter: filter || null,
 			};
 			const result = await this.rolesService.findAll(query);

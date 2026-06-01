@@ -24,7 +24,6 @@ import {
 	ResponseHandler,
 	RoleAuth,
 	RoleGuard,
-	SortDirection,
 } from "@common";
 import { PermissionList } from "@repositories";
 import { defaultSort, paginationLength } from "@utils";
@@ -137,9 +136,7 @@ export class PermissionsController {
 				limit: limit || paginationLength,
 				search: search || null,
 				sort: sort || defaultSort,
-				sortDirection: (sortDirection === "asc"
-					? "asc"
-					: "desc") as SortDirection,
+				sortDirection: sortDirection === "asc" ? "asc" : "desc",
 				filter: filter || null,
 			};
 			const result: PaginationResponse<PermissionList> =

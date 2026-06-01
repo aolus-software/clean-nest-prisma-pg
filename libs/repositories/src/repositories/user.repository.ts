@@ -281,7 +281,7 @@ export function UserRepository(tx?: Prisma.TransactionClient) {
 			createdAt: Date;
 			updatedAt: Date;
 		} | null> {
-			return db.user.findFirst({
+			return await db.user.findFirst({
 				where: { email, deletedAt: null },
 				select: {
 					id: true,

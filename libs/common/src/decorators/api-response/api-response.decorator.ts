@@ -8,11 +8,13 @@ import {
 	ApiUnauthorizedResponse,
 	ApiUnprocessableEntityResponse,
 	ApiNotFoundResponse,
+	ApiResponseSchemaHost,
 } from "@nestjs/swagger";
-import {
-	ReferenceObject,
-	SchemaObject,
-} from "@nestjs/swagger/dist/interfaces/open-api-spec.interface";
+
+// Public-surface alias for an OpenAPI schema/reference object. The underlying
+// SchemaObject/ReferenceObject types are not re-exported from the package root,
+// so derive the equivalent shape from the exported ApiResponseSchemaHost.
+type SchemaObjectOrReference = ApiResponseSchemaHost["schema"];
 
 interface ApiStandardResponsesOptions {
 	badRequest?: boolean;
@@ -183,7 +185,7 @@ export const ApiSuccessResponse = <T>(
 	status: number,
 	description: string,
 	example: T,
-	exampleProperties?: SchemaObject | ReferenceObject,
+	exampleProperties?: SchemaObjectOrReference,
 ) => {
 	return ApiResponse({
 		status,
