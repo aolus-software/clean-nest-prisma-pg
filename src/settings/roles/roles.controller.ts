@@ -54,11 +54,15 @@ export class RolesController {
 	async create(@Body() createRoleDto: CreateRoleDto, @Res() res: FastifyReply) {
 		try {
 			await this.rolesService.create(createRoleDto);
-			return ResponseHandler.success<void>(
-				201,
-				this.i18n.t("message.role.create_success"),
-				undefined,
-			);
+			return res
+				.status(201)
+				.send(
+					ResponseHandler.success<void>(
+						201,
+						this.i18n.t("message.role.create_success"),
+						undefined,
+					),
+				);
 		} catch (error) {
 			return ResponseHandler.handleError(res, error);
 		}
@@ -144,13 +148,15 @@ export class RolesController {
 				filter: filter || null,
 			};
 			const result = await this.rolesService.findAll(query);
-			return res.send(
-				ResponseHandler.success<PaginationResponse<RoleList>>(
-					200,
-					this.i18n.t("message.role.retrieved_success"),
-					result,
-				),
-			);
+			return res
+				.status(200)
+				.send(
+					ResponseHandler.success<PaginationResponse<RoleList>>(
+						200,
+						this.i18n.t("message.role.retrieved_success"),
+						result,
+					),
+				);
 		} catch (error) {
 			return ResponseHandler.handleError(res, error);
 		}
@@ -179,11 +185,15 @@ export class RolesController {
 	async findOne(@Param("id") id: string, @Res() res: FastifyReply) {
 		try {
 			const result = await this.rolesService.findOne(id);
-			return ResponseHandler.success<RoleDetail>(
-				200,
-				this.i18n.t("message.role.found_success"),
-				result,
-			);
+			return res
+				.status(200)
+				.send(
+					ResponseHandler.success<RoleDetail>(
+						200,
+						this.i18n.t("message.role.found_success"),
+						result,
+					),
+				);
 		} catch (error) {
 			return ResponseHandler.handleError(res, error);
 		}
@@ -203,11 +213,15 @@ export class RolesController {
 	) {
 		try {
 			await this.rolesService.update(id, updateRoleDto);
-			return ResponseHandler.success<void>(
-				200,
-				this.i18n.t("message.role.update_success"),
-				undefined,
-			);
+			return res
+				.status(200)
+				.send(
+					ResponseHandler.success<void>(
+						200,
+						this.i18n.t("message.role.update_success"),
+						undefined,
+					),
+				);
 		} catch (error) {
 			return ResponseHandler.handleError(res, error);
 		}
@@ -225,11 +239,15 @@ export class RolesController {
 	async remove(@Param("id") id: string, @Res() res: FastifyReply) {
 		try {
 			await this.rolesService.remove(id);
-			return ResponseHandler.success<void>(
-				200,
-				this.i18n.t("message.role.delete_success"),
-				undefined,
-			);
+			return res
+				.status(200)
+				.send(
+					ResponseHandler.success<void>(
+						200,
+						this.i18n.t("message.role.delete_success"),
+						undefined,
+					),
+				);
 		} catch (error) {
 			return ResponseHandler.handleError(res, error);
 		}

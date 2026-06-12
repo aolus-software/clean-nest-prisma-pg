@@ -65,11 +65,15 @@ export class UsersController {
 	async create(@Body() createUserDto: CreateUserDto, @Res() res: FastifyReply) {
 		try {
 			await this.usersService.create(createUserDto);
-			return ResponseHandler.success<void>(
-				201,
-				this.i18n.t("message.user.create_success"),
-				undefined,
-			);
+			return res
+				.status(201)
+				.send(
+					ResponseHandler.success<void>(
+						201,
+						this.i18n.t("message.user.create_success"),
+						undefined,
+					),
+				);
 		} catch (error) {
 			return ResponseHandler.handleError(res, error);
 		}
@@ -89,11 +93,15 @@ export class UsersController {
 	async resendVerifyEmail(@Param("id") id: string, @Res() res: FastifyReply) {
 		try {
 			await this.usersService.resendVerificationEmail(id);
-			return ResponseHandler.success<void>(
-				200,
-				this.i18n.t("message.user.resend_verification_success"),
-				undefined,
-			);
+			return res
+				.status(200)
+				.send(
+					ResponseHandler.success<void>(
+						200,
+						this.i18n.t("message.user.resend_verification_success"),
+						undefined,
+					),
+				);
 		} catch (error) {
 			return ResponseHandler.handleError(res, error);
 		}
@@ -144,11 +152,15 @@ export class UsersController {
 			};
 
 			const users = await this.usersService.findAll(query);
-			return ResponseHandler.success(
-				200,
-				this.i18n.t("message.user.retrieved_success"),
-				users,
-			);
+			return res
+				.status(200)
+				.send(
+					ResponseHandler.success(
+						200,
+						this.i18n.t("message.user.retrieved_success"),
+						users,
+					),
+				);
 		} catch (error) {
 			return ResponseHandler.handleError(res, error);
 		}
@@ -163,11 +175,15 @@ export class UsersController {
 	async findOne(@Param("id") id: string, @Res() res: FastifyReply) {
 		try {
 			const user = await this.usersService.findOne(id);
-			return ResponseHandler.success(
-				200,
-				this.i18n.t("message.user.found_success"),
-				user,
-			);
+			return res
+				.status(200)
+				.send(
+					ResponseHandler.success(
+						200,
+						this.i18n.t("message.user.found_success"),
+						user,
+					),
+				);
 		} catch (error) {
 			return ResponseHandler.handleError(res, error);
 		}
@@ -183,11 +199,15 @@ export class UsersController {
 	) {
 		try {
 			await this.usersService.update(id, updateUserDto);
-			return ResponseHandler.success<void>(
-				200,
-				this.i18n.t("message.user.update_success"),
-				undefined,
-			);
+			return res
+				.status(200)
+				.send(
+					ResponseHandler.success<void>(
+						200,
+						this.i18n.t("message.user.update_success"),
+						undefined,
+					),
+				);
 		} catch (error) {
 			return ResponseHandler.handleError(res, error);
 		}
@@ -203,11 +223,15 @@ export class UsersController {
 	) {
 		try {
 			await this.usersService.updateStatus(id, updateStatusDto);
-			return ResponseHandler.success<void>(
-				200,
-				this.i18n.t("message.user.status_update_success"),
-				undefined,
-			);
+			return res
+				.status(200)
+				.send(
+					ResponseHandler.success<void>(
+						200,
+						this.i18n.t("message.user.status_update_success"),
+						undefined,
+					),
+				);
 		} catch (error) {
 			return ResponseHandler.handleError(res, error);
 		}
@@ -223,11 +247,15 @@ export class UsersController {
 	) {
 		try {
 			await this.usersService.updatePassword(id, updatePasswordDto);
-			return ResponseHandler.success<void>(
-				200,
-				this.i18n.t("message.user.password_update_success"),
-				undefined,
-			);
+			return res
+				.status(200)
+				.send(
+					ResponseHandler.success<void>(
+						200,
+						this.i18n.t("message.user.password_update_success"),
+						undefined,
+					),
+				);
 		} catch (error) {
 			return ResponseHandler.handleError(res, error);
 		}
@@ -242,11 +270,15 @@ export class UsersController {
 	async remove(@Param("id") id: string, @Res() res: FastifyReply) {
 		try {
 			await this.usersService.remove(id);
-			return ResponseHandler.success<void>(
-				200,
-				this.i18n.t("message.user.delete_success"),
-				undefined,
-			);
+			return res
+				.status(200)
+				.send(
+					ResponseHandler.success<void>(
+						200,
+						this.i18n.t("message.user.delete_success"),
+						undefined,
+					),
+				);
 		} catch (error) {
 			return ResponseHandler.handleError(res, error);
 		}
