@@ -25,7 +25,7 @@ export class PermissionGuard implements CanActivate {
 
 		const request: FastifyRequest = context.switchToHttp().getRequest();
 		const user: UserInformation = request.user;
-		if (!user || !user.roles) {
+		if (!user || !user.roles || !user.permissions) {
 			throw new ForbiddenException(
 				I18nContext.current()?.t("message.common.access_denied") ??
 					"Access denied",
@@ -37,7 +37,7 @@ export class PermissionGuard implements CanActivate {
 		}
 
 		const hasPermission = requiredPermissions.some((permission) =>
-			user.roles.some((userRole) => userRole.name === permission),
+			user.permissions.includes(permission),
 		);
 
 		if (!hasPermission) {
