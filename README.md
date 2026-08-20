@@ -203,6 +203,40 @@ All environment variables are validated by envalid in `libs/config/src/env/index
 `NODE_ENV` accepts `development`, `dev`, `staging`, `production`, or `test`. The `dev` and `staging` values exist for the deployed PM2 apps (see [Deployment](#deployment)).
 
 `API_DOCS_ENABLED` is the single switch for the `/docs` API reference and is independent of `NODE_ENV` — set it to `true` on any environment where the schema should be browsable, and leave it unset or `false` everywhere else. It defaults to `false` so an environment that never sets it cannot expose the schema by accident; `.env.example` turns it on for local development.
+### Porting configuration between the sibling templates
+
+This template has three siblings — `clean-nest-drizzle-pg`, `clean-nest-prisma-pg`, `clean-elysia`,
+and `clean-elysia-prisma` — and the two families use **different names for the same concepts**. The
+names are internally consistent within each family and are deliberately left alone; this table exists
+so an `.env` can be carried across without silently losing a setting.
+
+**14 variables are common to all four**: `APP_NAME`, `APP_PORT`, `APP_TIMEZONE`, `APP_URL`,
+`DATABASE_URL`, `JWT_SECRET`, `MAIL_FROM`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_SECURE`, `NODE_ENV`,
+`REDIS_HOST`, `REDIS_PASSWORD`, `REDIS_PORT`.
+
+| Concern | NestJS family | Elysia family |
+| ------- | ------------- | ------------- |
+| App secret | `APP_SECRET` | `APP_KEY` |
+| CORS origin | `ALLOWED_ORIGINS`, `ALLOWED_METHODS`, `ALLOWED_HEADERS`, `MAX_AGE`, `CREDENTIALS` | `ALLOWED_HOST` |
+| Front-end URL | `FRONTEND_URL` | `CLIENT_URL` |
+| Mail credentials | `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_DEFAULT_SUBJECT` | `MAIL_USER`, `MAIL_PASS` |
+| Redis extra | `REDIS_TTL` | `REDIS_DB` |
+| JWT | `JWT_SECRET`, `JWT_REFRESH_SECRET`, `JWT_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN` | `JWT_SECRET` only |
+
+**NestJS-only** (no Elysia equivalent): `API_DOCS_ENABLED`, `THROTTLER_TTL`, `THROTTLER_LIMIT`,
+`APP_VERSION`.
+
+**Elysia-only**: `APP_CLUSTER_MODE`, `APP_CLUSTER_WORKERS`, `LOG_LEVEL`, `CLICKHOUSE_HOST`,
+`CLICKHOUSE_USER`, `CLICKHOUSE_PASSWORD`, `CLICKHOUSE_DATABASE`, and `APP_REUSE_PORT`
+(`clean-elysia` only).
+
+Two behaviours do **not** port, because the Elysia family has no equivalent variable:
+
+- `API_DOCS_ENABLED` gates the docs UI here on an explicit flag defaulting to `false`, so an
+  environment that never sets it cannot expose the schema. The Elysia family gates `/docs` on
+  `APP_ENV !== "production"` instead, publishing it on any non-production deployment.
+- `THROTTLER_TTL` / `THROTTLER_LIMIT` drive the throttler from the environment here. The Elysia rate
+  limit is hardcoded in its security plugin.
 
 ## Running the Application
 
