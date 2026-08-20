@@ -21,7 +21,7 @@ async function bootstrap() {
 	app.useGlobalPipes(new CustomValidationPipe());
 
 	// Swagger Configuration=====================
-	if (getEnv().NODE_ENV !== "production") {
+	if (getEnv().API_DOCS_ENABLED) {
 		const config = swaggerConfig;
 		const document = SwaggerModule.createDocument(app, config, {
 			deepScanRoutes: true,

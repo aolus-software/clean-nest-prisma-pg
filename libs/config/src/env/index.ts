@@ -8,6 +8,7 @@ interface IEnvConfig {
 	APP_URL: string;
 	APP_TIMEZONE: string;
 	NODE_ENV: "development" | "dev" | "staging" | "production" | "test";
+	API_DOCS_ENABLED: boolean;
 
 	FRONTEND_URL: string;
 
@@ -60,6 +61,10 @@ export function getEnv(): IEnvConfig {
 			choices: ["development", "dev", "staging", "production", "test"],
 			default: "development",
 		}),
+		/* Mounts the Scalar API reference at /docs. Defaults to false so an
+		   environment that never sets it cannot expose the schema by accident;
+		   .env.example enables it for local development. */
+		API_DOCS_ENABLED: bool({ default: false }),
 
 		FRONTEND_URL: str({ default: "http://localhost:3000" }),
 
@@ -101,6 +106,7 @@ export function getEnv(): IEnvConfig {
 		APP_URL: env.APP_URL,
 		APP_TIMEZONE: env.APP_TIMEZONE,
 		NODE_ENV: env.NODE_ENV,
+		API_DOCS_ENABLED: env.API_DOCS_ENABLED,
 
 		FRONTEND_URL: env.FRONTEND_URL,
 

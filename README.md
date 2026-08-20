@@ -156,6 +156,9 @@ APP_URL=localhost:8001
 APP_TIMEZONE=UTC
 NODE_ENV=development
 
+# API Documentation (Scalar UI at /docs)
+API_DOCS_ENABLED=true
+
 # Frontend
 FRONTEND_URL=http://localhost:3000
 
@@ -197,7 +200,9 @@ MAIL_DEFAULT_SUBJECT="Clean Nest"
 
 All environment variables are validated by envalid in `libs/config/src/env/index.ts` and read through `getEnv()`. Never read `process.env` directly — a variable that is not declared there is not available to the app. A missing or invalid required variable exits the process at boot rather than failing later.
 
-`NODE_ENV` accepts `development`, `dev`, `staging`, `production`, or `test`. The `dev` and `staging` values exist for the deployed PM2 apps (see [Deployment](#deployment)). Only `production` hides the API documentation at `/docs`.
+`NODE_ENV` accepts `development`, `dev`, `staging`, `production`, or `test`. The `dev` and `staging` values exist for the deployed PM2 apps (see [Deployment](#deployment)).
+
+`API_DOCS_ENABLED` is the single switch for the `/docs` API reference and is independent of `NODE_ENV` — set it to `true` on any environment where the schema should be browsable, and leave it unset or `false` everywhere else. It defaults to `false` so an environment that never sets it cannot expose the schema by accident; `.env.example` turns it on for local development.
 
 ## Running the Application
 
@@ -215,7 +220,7 @@ bun run start:debug
 
 The application will be available at `http://localhost:8001` (or the port specified in your `.env` file).
 
-API documentation is available at `http://localhost:8001/docs` in non-production environments.
+API documentation is available at `http://localhost:8001/docs` whenever `API_DOCS_ENABLED=true`. The variable defaults to `false`, so a deployment that does not set it serves no documentation route at all.
 
 ## Database Management
 

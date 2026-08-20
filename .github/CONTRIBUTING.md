@@ -30,8 +30,8 @@ make db-migrate-dev   # prisma migrate dev + generate
 make dev
 ```
 
-The API listens on `APP_PORT` (default 8001). The Scalar API reference is at `/docs` on every
-environment except `production`.
+The API listens on `APP_PORT` (default 8001). The Scalar API reference is at `/docs` when
+`API_DOCS_ENABLED=true`.
 
 Useful commands:
 

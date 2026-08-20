@@ -7,8 +7,8 @@
 
    NODE_ENV values here ("dev" / "staging" / "production") must stay inside the
    choices list that getEnv() validates in libs/config/src/env/index.ts, or the
-   process exits at boot. NODE_ENV also gates the Swagger/Scalar docs in main.ts:
-   they are mounted on dev and staging, and hidden on production.
+   process exits at boot. The Swagger/Scalar docs at /docs are gated separately
+   by API_DOCS_ENABLED, which comes from the .env file below.
 
    env_file loads .env from the deploy directory; per-environment values are
    supplied by that file, not by this config. Only NODE_ENV is set here. */
