@@ -36,7 +36,19 @@ make db-seed             # bun run seed
 make db-studio           # prisma studio (GUI)
 make db-reset            # prisma migrate reset --force + seed
 bunx --bun prisma migrate dev --name <name>   # create a migration from schema changes
+
+# Deployment (PM2)
+make deploy-dev          # install + migrate + generate + build, then start/reload pm2 app
+make deploy-staging
+make deploy-production
+make pm2-status          # pm2 list
+make pm2-logs-dev        # also pm2-logs-staging / pm2-logs-production
+make pm2-stop-dev        # also pm2-stop-staging / pm2-stop-production
 ```
+
+Deploys are driven by `ecosystem.config.js`, which defines one PM2 app per environment named `clean-nest-prisma-pg-<env>` (`PM2_APP_PREFIX` in the `Makefile` must match). Each `deploy-<env>` target runs the full prep sequence, then **reloads** the app if it already exists (zero-downtime under cluster mode) or starts it from the ecosystem file if not. `pm2` must be on `PATH`; override with `make deploy-dev PM2='bunx pm2'`. Production runs `instances: "max"` in cluster mode, dev and staging run a single fork.
+
+`NODE_ENV` is set per app to `dev` / `staging` / `production` — all three are in the envalid `choices` list, and only `production` hides the `/docs` Swagger UI. Adding an environment means adding it to **both** `ecosystem.config.js` and `getEnv()`, or the process exits at boot.
 
 After editing `prisma/schema.prisma`, run `make db-migrate-dev` to create/apply the migration and regenerate the client. Run `make db-generate` alone if you only need to refresh the typed client.
 
@@ -65,21 +77,30 @@ NestJS monorepo: feature modules in `src/`, four path-aliased shared libraries i
 - **Responses go through `ResponseHandler`.** Controllers send `res.status(status).send(ResponseHandler.success(status, message, data))` on the happy path and call `ResponseHandler.handleError(res, error)` inside `catch`. Never `return ResponseHandler.success(...)` directly — always send it through the Fastify reply. `handleError` special-cases `UnprocessableEntityException` to surface its `{ message, error: { field: [...] } }` payload as a 422 — this is the convention for field-level validation errors. Unknown errors are logged via `LoggerUtils` and returned as a generic 500.
 - **Auth/RBAC is decorator-driven.** Apply `@UseGuards(AuthGuard, PermissionGuard, RoleGuard)` at the controller class, then gate each method with `@PermissionAuth("user:create")` or `@RoleAuth("superuser")`. `@CurrentUser()` injects the resolved `UserInformation` (roles + flattened permissions), cached in Redis.
 - **Env access is centralized.** Never read `process.env` directly — call `getEnv()` from `@config` (envalid-validated, cached on first call). Swagger/Scalar docs at `/docs` are only mounted when `NODE_ENV !== "production"`.
+- **Every user-facing string is translated.** `nestjs-i18n` catalogs live at `libs/common/src/i18n/lang/{en,id}/{message,validation,email}.json`. Services and controllers inject `I18nService`; DTOs use `i18nValidationMessage("validation.<CONSTRAINT>")`; guards, pipes, the response handler, and repositories use `I18nContext.current()?.t(...) ?? "fallback"` because they sit outside request DI. `disableMiddleware: true` is deliberate — under Fastify the middleware's async context does not reach the handler, so the global `I18nLanguageInterceptor` resolves the language instead. Never re-enable it, and never hardcode an English literal. See `.claude/rules/i18n.md`.
+- **Rate limiting is global and always on.** `ThrottlerGuard` is registered as an `APP_GUARD`, so every route is throttled at `THROTTLER_LIMIT`/`THROTTLER_TTL` (default 60 per 60s) and any route can return 429. Never re-register the guard per module; override a single route with `@Throttle`/`@SkipThrottle`. See `.claude/rules/rate-limiting.md`.
+- **Routes are flat.** No `setGlobalPrefix`, no versioning — a controller's path is its resource name, and access is enforced by guards and `@PermissionAuth`/`@RoleAuth`, never by the path prefix. The live route map lives in `.claude/rules/routes.md` and is updated in the same change as the route.
 - **Mail is queued.** `MailService.sendMail(...)` enqueues a BullMQ job processed by `mail.processor.ts`; it auto-injects `appName`/`frontendUrl` into the Handlebars template context. Use `sendEmailSync` only when you must send inline.
 - **Soft deletes.** User rows carry `deletedAt`; every read query filters `deletedAt: null` and "delete" sets the timestamp (`DateUtils.now().toDate()`) instead of issuing a `DELETE`.
 
 ## Conventions
 
-Detailed, path-scoped rules live in `.claude/rules/` and are the source of truth for writing code — consult the relevant one before adding a controller, service, repository, DTO, or module. Highlights:
+Detailed, path-scoped rules live in `.claude/rules/` and are the source of truth for writing code — consult the relevant one before adding a controller, service, repository, DTO, or module.
+
+Two of them apply to **every** change regardless of path: `contradiction-halt.md` (a request that contradicts a rule, the architecture, or a security invariant is reported and halted, never silently implemented or silently worked around) and `documentation.md` (a doc your change makes wrong is fixed in the same change). Read those two before starting, not after.
+
+Highlights:
 
 - **Style:** tabs, double quotes, semicolons (Prettier). No `any` except `catch (err: unknown)`. Explicit return types and parameter types everywhere. One block comment above each function — never line-by-line comments. No emojis/icons. No `console.*` — use `LoggerUtils`.
 - **Shared code** (guards, pipes, decorators, utils, types) belongs in `libs/`, never in `src/`.
 - **One domain entity per module** (one controller + one service). See `.claude/rules/module.md`.
 - **Permission strings** are `entity:action` with the entity singular: `user:create`, `user:list`, `user:view`, `user:update`, `user:delete`.
 - **Use `PATCH` (not `PUT`)** for updates.
+- **No hardcoded user-facing strings** — every response message, exception message, and validation message resolves through i18n, with the key added to both `en` and `id` before the code that uses it.
+- **Uniqueness and business-rule failures are 422**, not 409, and the field map is keyed `error` (singular): `{ message, error: { field: [...] } }`. See `.claude/rules/response-codes.md`.
 
 ## Skills, rules, and commands
 
 - `.claude/rules/` — path-scoped coding standards for this codebase.
-- `.claude/commands/` — `/commit` (conventional commit workflow) and `/update-todo`.
+- `.claude/commands/` — `/commit` (conventional commit workflow), `/update-todo`, and `/audit-flow` (read-only whole-codebase sweep that writes explained findings to `docs/audit-findings.md` and never fixes anything; its writing contract is `.claude/rules/audit-findings.md`).
 - `.claude/skills/` — engineering skills you maintain yourself (see the directory's README for the intended set).

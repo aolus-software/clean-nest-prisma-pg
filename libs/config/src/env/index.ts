@@ -7,7 +7,7 @@ interface IEnvConfig {
 	APP_PORT: number;
 	APP_URL: string;
 	APP_TIMEZONE: string;
-	NODE_ENV: "development" | "production" | "test";
+	NODE_ENV: "development" | "dev" | "staging" | "production" | "test";
 
 	FRONTEND_URL: string;
 
@@ -53,8 +53,11 @@ export function getEnv(): IEnvConfig {
 		APP_PORT: port({ default: 8002 }),
 		APP_URL: str({ default: "localhost:8002" }),
 		APP_TIMEZONE: str({ default: "UTC" }),
+		/* "dev" and "staging" are the values ecosystem.config.js sets for the
+		   deployed PM2 apps; without them here envalid rejects the value and the
+		   process exits at boot. Only "production" hides the Swagger docs. */
 		NODE_ENV: str({
-			choices: ["development", "production", "test"],
+			choices: ["development", "dev", "staging", "production", "test"],
 			default: "development",
 		}),
 
