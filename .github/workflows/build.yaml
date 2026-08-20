@@ -12,6 +12,11 @@ on:
       - staging
       - main
 
+# A newer push to the same branch makes an in-flight run obsolete.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Build Application
@@ -32,6 +37,19 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+      # Mirrors docker-compose.yml. Nothing in the build connects to Redis today,
+      # but the app requires it at runtime, so a test step can be added without
+      # also having to change the workflow.
+      redis:
+        image: redis:8
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
 
@@ -44,6 +62,14 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
       - name: Setup .env
         run: |
           echo "APP_NAME=CleanNest" >> .env
@@ -53,6 +79,7 @@ jobs:
           echo "APP_URL=localhost:8001" >> .env
           echo "APP_TIMEZONE=UTC" >> .env
           echo "NODE_ENV=test" >> .env
+          echo "API_DOCS_ENABLED=false" >> .env
           echo "FRONTEND_URL=http://localhost:3000" >> .env
           echo "DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres" >> .env
           echo "JWT_SECRET=$(openssl rand -hex 32)" >> .env
@@ -81,20 +108,22 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Check formatting
-        run: bun run format
-
       - name: Generate Prisma client
         run: bunx --bun prisma generate
-
-      - name: Run linter
-        run: bun run lint:fix
 
       - name: Validate Prisma schema
         run: bunx --bun prisma validate
 
       - name: Deploy migrations
         run: bunx --bun prisma migrate deploy
+
+      # --check / no --fix on purpose: CI must fail on a violation rather than
+      # silently rewriting files in a checkout that is thrown away.
+      - name: Check formatting
+        run: bun run format:check
+
+      - name: Run linter
+        run: bun run lint:check
 
       - name: Type check
         run: bun run typecheck
