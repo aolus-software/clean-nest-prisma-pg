@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or usage help
+    url: https://github.com/aolus-software/clean-nest-prisma-pg/discussions
+    about: Ask how to do something with the starter. Questions filed as issues will be converted to discussions.
+  - name: Report a security vulnerability
+    url: https://github.com/aolus-software/clean-nest-prisma-pg/security/advisories/new
+    about: Report privately through GitHub Security Advisories. Never open a public issue for a vulnerability.

@@ -1,0 +1,103 @@
+name: Bug report
+description: Something in the starter behaves incorrectly or crashes.
+title: "bug: "
+labels: ["bug", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a report. Please fill in what you can —
+        a reproduction is worth more than a long description.
+
+        **Do not report security vulnerabilities here.** See [SECURITY.md](../blob/main/.github/SECURITY.md).
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you observe, and what did you expect instead?
+      placeholder: |
+        Calling POST /users with a duplicate email returns 500 instead of 422.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: The smallest sequence that triggers it. Include the request and response if it is an HTTP issue.
+      placeholder: |
+        1. bun install
+        2. make db-migrate-dev
+        3. make dev
+        4. curl -X POST localhost:8001/users -H 'Content-Type: application/json' -d '{"email":"a@b.c"}'
+        5. Observe 500
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or error output
+      description: Paste the stack trace or response body. This is rendered as code, no backticks needed.
+      render: shell
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which area does this affect?
+      multiple: true
+      options:
+        - Auth / tokens (login, register, verify, reset password)
+        - RBAC (guards, permissions, roles)
+        - Database / Prisma / migrations
+        - Validation / DTOs
+        - i18n / translations
+        - Response envelope / Swagger docs
+        - Caching / Redis
+        - Queues / mail (BullMQ)
+        - Rate limiting
+        - Build / tooling / CI
+        - Deployment (PM2, ecosystem.config.js)
+        - Documentation
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Commit or version
+      description: "Output of `git rev-parse --short HEAD`"
+      placeholder: d53ea77
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: |
+        Run these and paste the output:
+        `bun --version`, `node --version`, `bunx prisma --version`, and your OS.
+      placeholder: |
+        Bun: 1.3.x
+        Node: 22.x
+        Prisma: x.y.z
+        OS: macOS 15 / Ubuntu 24.04
+        Postgres: 17 (docker-compose)
+        Redis: 8 (docker-compose)
+      render: shell
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+        - label: I am running against a supported Postgres and Redis (see docker-compose.yml).
+          required: true
+        - label: I ran `bun install` and applied migrations before reproducing.
+          required: true

@@ -1,0 +1,56 @@
+name: Documentation issue
+description: Something in the docs is wrong, missing, or misleading.
+title: "docs: "
+labels: ["documentation", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This repo treats documentation as part of the code — see
+        `.claude/rules/documentation.md`. A doc that contradicts the code is a bug,
+        so thank you for reporting it.
+
+  - type: dropdown
+    id: where
+    attributes:
+      label: Which document?
+      multiple: true
+      options:
+        - README.md
+        - CLAUDE.md
+        - .claude/rules/ (coding standards)
+        - .claude/commands/ (slash commands)
+        - .agents/skills/ (skill bundle)
+        - Swagger / Scalar API reference at /docs
+        - Code comments
+        - .env.example
+        - Makefile help output
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Specific location
+      description: File and line, or the heading / command name.
+      placeholder: "README.md, \"Deployment\" section — or .claude/rules/routes.md:88"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong?
+      description: Quote what it says now and explain what the code actually does.
+      placeholder: |
+        The README says `make db-seed` runs the seeder, but there is no `seed` script
+        in package.json and no seed files in the repo, so the target fails.
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested correction
+      description: Optional, but a concrete rewrite is the fastest path to a fix.

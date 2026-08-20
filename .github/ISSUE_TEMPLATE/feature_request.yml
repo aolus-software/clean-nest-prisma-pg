@@ -1,0 +1,77 @@
+name: Feature request
+description: Suggest a capability or improvement for the starter.
+title: "feat: "
+labels: ["enhancement", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is a **starter template**, so the bar for new features is whether most
+        projects built on it would want the thing. Highly app-specific features are
+        usually better left to the project that clones this repo.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the situation you hit, not the solution you have in mind.
+      placeholder: |
+        Every project I start from this template has to hand-roll file uploads to S3,
+        because the upload interceptor only writes to local disk.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would you add or change? Which layer does it belong in?
+      placeholder: |
+        A StorageService in @common with a local driver and an S3 driver, selected by
+        a STORAGE_DRIVER env var validated in getEnv().
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which area would this touch?
+      multiple: true
+      options:
+        - Auth / tokens
+        - RBAC (guards, permissions, roles)
+        - Database / Prisma / migrations
+        - Validation / DTOs
+        - i18n / translations
+        - Response envelope / Swagger docs
+        - Caching / Redis
+        - Queues / mail (BullMQ)
+        - Rate limiting
+        - Build / tooling / CI
+        - Deployment (PM2, ecosystem.config.js)
+        - Documentation
+        - New shared lib under libs/
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Including "do nothing and let each project solve it" — say why that is not enough.
+
+  - type: checkboxes
+    id: breaking
+    attributes:
+      label: Impact
+      options:
+        - label: This would be a breaking change for existing projects built on the template.
+        - label: I am willing to open a pull request for this.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and discussions for this idea.
+          required: true
