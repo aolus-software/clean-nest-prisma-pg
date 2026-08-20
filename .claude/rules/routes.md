@@ -59,11 +59,11 @@ export class UsersController {
 
 ```
 # Root / infrastructure — no auth
-GET    /                                    app health string
+GET    /                                    app health string — @ApiTags("App")
 GET    /health                              @ApiTags("Health") — terminus composite check
 GET    /health/live                         liveness probe
 
-# Auth (/auth) — no class-level guard; each route is public unless marked
+# Auth (/auth) — @ApiTags("Auth"), no class-level guard; each route is public unless marked
 POST   /auth/login                          PUBLIC
 POST   /auth/register                       PUBLIC
 POST   /auth/resend-verification-email      PUBLIC
@@ -75,7 +75,7 @@ GET    /auth/profile                        @UseGuards(AuthGuard) — own identi
 
 # Settings / Users (/users) — AuthGuard + PermissionGuard + RoleGuard
 POST   /users                               user:create
-POST   /users/:id/resend-verify-email       (authenticated only — see gap below)
+POST   /users/:id/resend-verify-email       user:update
 GET    /users                               user:list
 GET    /users/:id                           user:view
 PATCH  /users/:id                           user:update
@@ -103,15 +103,10 @@ change — that is `documentation.md`.
 
 ## Known gaps in the current map
 
-Per `contradiction-halt.md` these are recorded, not silently fixed. Raise them before building on
-top of either one.
-
-- `POST /users/:id/resend-verify-email` carries `@ApiStandardResponses()` but **no `@PermissionAuth`
-  and no `@RoleAuth`**, so any authenticated user can trigger a verification email for any user id.
-  Every sibling route on the controller is permission-gated; this one is the odd path out. It most
-  likely wants `@PermissionAuth("user:update")`.
-- `AuthController` has **no `@ApiTags`**, so its eight routes land in Swagger's untagged default
-  group while every other controller is tagged. It wants `@ApiTags("Auth")`.
+None outstanding. The two gaps recorded in the 2026-08-20 sweep are fixed:
+`POST /users/:id/resend-verify-email` now carries `@PermissionAuth("user:update")` like every sibling
+route, and `AuthController` and `AppController` now carry `@ApiTags("Auth")` and `@ApiTags("App")`.
+See `docs/audit-findings.md`.
 
 ## Swagger tagging
 

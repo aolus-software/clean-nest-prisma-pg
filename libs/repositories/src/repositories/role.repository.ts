@@ -24,6 +24,12 @@ export interface RoleDetail extends Required<RoleList> {
 	};
 }
 
+/* The ?sort= and filter[...] values this repository accepts. Exported so the
+   controller can document them in Swagger from one source of truth rather than
+   restating the list. An unrecognised value is rejected, not ignored. */
+export const roleSortableFields = ["id", "name", "createdAt", "updatedAt"];
+export const roleFilterableFields = ["name", "createdAt", "updatedAt"];
+
 export function RoleRepository(tx?: Prisma.TransactionClient) {
 	const db = tx ?? prisma;
 
@@ -37,11 +43,9 @@ export function RoleRepository(tx?: Prisma.TransactionClient) {
 			const finalLimit = Number(limit);
 			const finalPage = Number(page);
 
-			const allowedSort = ["id", "name", "createdAt", "updatedAt"];
 			const sortDirectionAllowed = ["asc", "desc"];
-			const allowedFilter = ["name", "createdAt", "updatedAt"];
 
-			if (!allowedSort.includes(sort)) {
+			if (!roleSortableFields.includes(sort)) {
 				throw new BadRequestException(
 					I18nContext.current()?.t("message.common.invalid_sort_field") ??
 						"Invalid sort field",
@@ -58,7 +62,7 @@ export function RoleRepository(tx?: Prisma.TransactionClient) {
 			if (queryParam.filter) {
 				const filterKeys = Object.keys(queryParam.filter);
 				for (const key of filterKeys) {
-					if (!allowedFilter.includes(key)) {
+					if (!roleFilterableFields.includes(key)) {
 						throw new BadRequestException(
 							I18nContext.current()?.t("message.common.invalid_filter_field") ??
 								"Invalid filter field",

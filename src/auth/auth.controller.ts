@@ -15,11 +15,13 @@ import { ForgotPasswordDto } from "./dto/forgot-password.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { ResetPasswordTokenValidationDto } from "./dto/reset-password-token-validation.dto";
 import { FastifyReply } from "fastify";
-import { ApiBearerAuth, ApiResponse } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { ApiSuccessResponse } from "@common";
 import { UserStatus } from "@prisma/client";
 import { I18nService } from "nestjs-i18n";
 
 @Controller("auth")
+@ApiTags("Auth")
 export class AuthController {
 	constructor(
 		private readonly authService: AuthService,
@@ -27,37 +29,30 @@ export class AuthController {
 	) {}
 
 	@Post("/login")
-	@ApiResponse({
-		status: 200,
-		description: "User login successful",
-		schema: {
-			format: "application/json",
-			title: "Login Response",
-			description: "Response schema for a successful login",
-			example: {
-				code: 200,
-				success: true,
-				message: "Login successful",
-				data: {
-					user: {
-						id: "user-id",
-						email: "user@example.com",
-						name: "John Doe",
-						status: "ACTIVE",
-						createdAt: "2024-01-01T00:00:00.000Z",
-						updatedAt: "2024-01-01T00:00:00.000Z",
-						roles: [
-							{
-								name: "User",
-								permissions: ["read_articles", "comment"],
-							},
-						],
+	@ApiSuccessResponse(
+		200,
+		"Login successful",
+		{
+			user: {
+				id: "user-id",
+				email: "user@example.com",
+				name: "John Doe",
+				status: "ACTIVE",
+				createdAt: "2024-01-01T00:00:00.000Z",
+				updatedAt: "2024-01-01T00:00:00.000Z",
+				roles: [
+					{
+						name: "User",
 						permissions: ["read_articles", "comment"],
 					},
-					accessToken: "access-token",
-					refreshToken: "refresh-token",
-				},
+				],
+				permissions: ["read_articles", "comment"],
 			},
+			accessToken: "access-token",
+			refreshToken: "refresh-token",
+		},
+		{
+			type: "object",
 			properties: {
 				user: {
 					type: "object",
@@ -95,7 +90,7 @@ export class AuthController {
 				refreshToken: { type: "string", example: "refresh-token" },
 			},
 		},
-	})
+	)
 	@ApiStandardResponses({
 		unauthorized: false,
 		forbidden: false,
@@ -116,21 +111,11 @@ export class AuthController {
 	}
 
 	@Post("/register")
-	@ApiResponse({
-		status: 201,
-		description: "User registration successful",
-		schema: {
-			format: "application/json",
-			title: "Registration Response",
-			description: "Response schema for a successful registration",
-			example: {
-				code: 201,
-				success: true,
-				message: "Registration successful, please verify your email",
-				data: null,
-			},
-		},
-	})
+	@ApiSuccessResponse(
+		201,
+		"Registration successful, please verify your email",
+		null,
+	)
 	@ApiStandardResponses({
 		unauthorized: false,
 		forbidden: false,
@@ -153,21 +138,7 @@ export class AuthController {
 	}
 
 	@Post("/resend-verification-email")
-	@ApiResponse({
-		status: 200,
-		description: "Verification email resent successfully",
-		schema: {
-			format: "application/json",
-			title: "Resend Verification Email Response",
-			description: "Response schema for a successful resend verification email",
-			example: {
-				code: 200,
-				success: true,
-				message: "Verification email resent successfully",
-				data: null,
-			},
-		},
-	})
+	@ApiSuccessResponse(200, "Verification email resent successfully", null)
 	@ApiStandardResponses({
 		unauthorized: false,
 		forbidden: false,
@@ -193,21 +164,7 @@ export class AuthController {
 	}
 
 	@Post("/verify-email")
-	@ApiResponse({
-		status: 200,
-		description: "Email verified successfully",
-		schema: {
-			format: "application/json",
-			title: "Email Verification Response",
-			description: "Response schema for a successful email verification",
-			example: {
-				code: 200,
-				success: true,
-				message: "Email verified successfully",
-				data: null,
-			},
-		},
-	})
+	@ApiSuccessResponse(200, "Email verified successfully", null)
 	@ApiStandardResponses({
 		unauthorized: false,
 		forbidden: false,
@@ -233,21 +190,7 @@ export class AuthController {
 	}
 
 	@Post("/forgot-password")
-	@ApiResponse({
-		status: 200,
-		description: "Password reset email sent successfully",
-		schema: {
-			format: "application/json",
-			title: "Forgot Password Response",
-			description: "Response schema for a successful forgot password request",
-			example: {
-				code: 200,
-				success: true,
-				message: "Password reset email sent successfully",
-				data: null,
-			},
-		},
-	})
+	@ApiSuccessResponse(200, "Password reset email sent successfully", null)
 	@ApiStandardResponses({
 		unauthorized: false,
 		forbidden: false,
@@ -273,23 +216,8 @@ export class AuthController {
 	}
 
 	@Post("/validate-reset-password-token")
-	@ApiResponse({
-		status: 200,
-		description: "Reset password token validation successful",
-		schema: {
-			format: "application/json",
-			title: "Reset Password Token Validation Response",
-			description:
-				"Response schema for a successful reset password token validation",
-			example: {
-				code: 200,
-				success: true,
-				message: "Reset password token validation successful",
-				data: {
-					isValid: true,
-				},
-			},
-		},
+	@ApiSuccessResponse(200, "Reset password token validation successful", {
+		isValid: true,
 	})
 	@ApiStandardResponses({
 		unauthorized: false,
@@ -316,21 +244,7 @@ export class AuthController {
 	}
 
 	@Post("/reset-password")
-	@ApiResponse({
-		status: 200,
-		description: "Password reset successfully",
-		schema: {
-			format: "application/json",
-			title: "Reset Password Response",
-			description: "Response schema for a successful password reset",
-			example: {
-				code: 200,
-				success: true,
-				message: "Password reset successfully",
-				data: null,
-			},
-		},
-	})
+	@ApiSuccessResponse(200, "Password reset successfully", null)
 	@ApiStandardResponses({
 		unauthorized: false,
 		forbidden: false,
@@ -358,33 +272,26 @@ export class AuthController {
 	@Get("/profile")
 	@UseGuards(AuthGuard)
 	@ApiBearerAuth("Bearer")
-	@ApiResponse({
-		status: 200,
-		description: "Profile fetched successfully",
-		schema: {
-			format: "application/json",
-			title: "Profile Response",
-			description: "Response schema for a successful profile fetch",
-			example: {
-				code: 200,
-				success: true,
-				message: "Profile fetched successfully",
-				data: {
-					id: "user-id",
-					email: "user@example.com",
-					name: "John Doe",
-					status: "ACTIVE",
-					createdAt: "2024-01-01T00:00:00.000Z",
-					updatedAt: "2024-01-01T00:00:00.000Z",
-					roles: [
-						{
-							name: "User",
-							permissions: ["read_articles", "comment"],
-						},
-					],
+	@ApiSuccessResponse(
+		200,
+		"Profile fetched successfully",
+		{
+			id: "user-id",
+			email: "user@example.com",
+			name: "John Doe",
+			status: "ACTIVE",
+			createdAt: "2024-01-01T00:00:00.000Z",
+			updatedAt: "2024-01-01T00:00:00.000Z",
+			roles: [
+				{
+					name: "User",
 					permissions: ["read_articles", "comment"],
 				},
-			},
+			],
+			permissions: ["read_articles", "comment"],
+		},
+		{
+			type: "object",
 			properties: {
 				id: { type: "string", example: "user-id" },
 				email: { type: "string", example: "user@example.com" },
@@ -415,7 +322,7 @@ export class AuthController {
 				},
 			},
 		},
-	})
+	)
 	@ApiStandardResponses({
 		forbidden: false,
 	})

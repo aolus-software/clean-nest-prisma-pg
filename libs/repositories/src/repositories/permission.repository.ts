@@ -12,6 +12,24 @@ export interface PermissionList {
 	updatedAt: Date;
 }
 
+/* The ?sort= and filter[...] values this repository accepts. Exported so the
+   controller can document them in Swagger from one source of truth rather than
+   restating the list. An unrecognised value is rejected, not ignored. */
+export const permissionSortableFields = [
+	"id",
+	"name",
+	"group",
+	"createdAt",
+	"updatedAt",
+];
+export const permissionFilterableFields = [
+	"id",
+	"name",
+	"group",
+	"createdAt",
+	"updatedAt",
+];
+
 export function PermissionRepository(tx?: Prisma.TransactionClient) {
 	const db = tx || prisma;
 
@@ -25,11 +43,9 @@ export function PermissionRepository(tx?: Prisma.TransactionClient) {
 			const finalLimit = Number(limit);
 			const finalPage = Number(page);
 
-			const allowedSort = ["id", "name", "group", "createdAt", "updatedAt"];
 			const sortDirectionAllowed = ["asc", "desc"];
-			const allowedFilter = ["id", "name", "group", "createdAt", "updatedAt"];
 
-			if (!allowedSort.includes(sort)) {
+			if (!permissionSortableFields.includes(sort)) {
 				throw new BadRequestException(
 					I18nContext.current()?.t("message.common.invalid_sort_field") ??
 						"Invalid sort field",
@@ -46,7 +62,7 @@ export function PermissionRepository(tx?: Prisma.TransactionClient) {
 			if (queryParam.filter) {
 				const filterKeys = Object.keys(queryParam.filter);
 				for (const key of filterKeys) {
-					if (!allowedFilter.includes(key)) {
+					if (!permissionFilterableFields.includes(key)) {
 						throw new BadRequestException(
 							I18nContext.current()?.t("message.common.invalid_filter_field") ??
 								"Invalid filter field",

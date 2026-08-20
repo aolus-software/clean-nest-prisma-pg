@@ -34,6 +34,27 @@ export interface UserList {
 
 export type UserDetail = Required<UserList>;
 
+/* The ?sort= and filter[...] values this repository accepts. Exported so the
+   controller can document them in Swagger from one source of truth rather than
+   restating the list. An unrecognised value is rejected, not ignored. */
+export const userSortableFields = [
+	"id",
+	"name",
+	"email",
+	"status",
+	"createdAt",
+	"updatedAt",
+];
+export const userFilterableFields = [
+	"id",
+	"name",
+	"email",
+	"status",
+	"roles",
+	"createdAt",
+	"updatedAt",
+];
+
 export function UserRepository(tx?: Prisma.TransactionClient) {
 	const db = tx || prisma;
 
@@ -47,26 +68,9 @@ export function UserRepository(tx?: Prisma.TransactionClient) {
 			const finalLimit = Number(limit);
 			const finalPage = Number(page);
 
-			const allowedSort = [
-				"id",
-				"name",
-				"email",
-				"status",
-				"createdAt",
-				"updatedAt",
-			];
 			const sortDirectionAllowed = ["asc", "desc"];
-			const allowedFilter = [
-				"id",
-				"name",
-				"email",
-				"status",
-				"roles",
-				"createdAt",
-				"updatedAt",
-			];
 
-			if (!allowedSort.includes(sort)) {
+			if (!userSortableFields.includes(sort)) {
 				throw new BadRequestException(
 					I18nContext.current()?.t("message.common.invalid_sort_field") ??
 						"Invalid sort field",
@@ -83,7 +87,7 @@ export function UserRepository(tx?: Prisma.TransactionClient) {
 			if (queryParam.filter) {
 				const filterKeys = Object.keys(queryParam.filter);
 				for (const key of filterKeys) {
-					if (!allowedFilter.includes(key)) {
+					if (!userFilterableFields.includes(key)) {
 						throw new BadRequestException(
 							I18nContext.current()?.t("message.common.invalid_filter_field") ??
 								"Invalid filter field",

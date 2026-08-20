@@ -30,6 +30,10 @@ import { defaultSort, paginationLength } from "@utils";
 import { FastifyReply } from "fastify";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { ApiDatatableQueries } from "@common/decorators/api-datatable-queries/api-datatable-queries.decorator";
+import {
+	permissionSortableFields,
+	permissionFilterableFields,
+} from "@repositories";
 import { I18nService } from "nestjs-i18n";
 
 @Controller("permissions")
@@ -69,7 +73,10 @@ export class PermissionsController {
 	}
 
 	@Get()
-	@ApiDatatableQueries()
+	@ApiDatatableQueries({
+		sortFields: permissionSortableFields,
+		filterFields: permissionFilterableFields,
+	})
 	@ApiSuccessResponse(
 		200,
 		"Permissions retrieved successfully",

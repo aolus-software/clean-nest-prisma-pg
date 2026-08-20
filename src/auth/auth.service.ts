@@ -127,7 +127,7 @@ export class AuthService {
 				data: {
 					userId: newUser.id,
 					token,
-					expiresAt: emailVerificationLifetime,
+					expiresAt: emailVerificationLifetime(),
 				},
 			});
 
@@ -165,7 +165,7 @@ export class AuthService {
 			data: {
 				userId: user.id,
 				token,
-				expiresAt: emailVerificationLifetime,
+				expiresAt: emailVerificationLifetime(),
 			},
 		});
 
@@ -251,7 +251,7 @@ export class AuthService {
 			data: {
 				userId: user.id,
 				token,
-				expiresAt: resetPasswordLifetime,
+				expiresAt: resetPasswordLifetime(),
 			},
 		});
 

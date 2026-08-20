@@ -7,11 +7,7 @@ import { CreateRoleDto } from "./dto/create-role.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";
 import { prisma } from "@repositories";
 import { DatatableType, PaginationResponse } from "@common";
-import {
-	RoleDetail,
-	RoleList,
-	RoleRepository,
-} from "@repositories/repositories/role.repostory";
+import { RoleDetail, RoleList, RoleRepository } from "@repositories";
 import { I18nService } from "nestjs-i18n";
 
 @Injectable()

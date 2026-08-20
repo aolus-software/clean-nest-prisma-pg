@@ -38,6 +38,7 @@ import {
 	ApiTags,
 } from "@nestjs/swagger";
 import { ApiDatatableQueries } from "@common/decorators/api-datatable-queries/api-datatable-queries.decorator";
+import { userSortableFields, userFilterableFields } from "@repositories";
 import { I18nService } from "nestjs-i18n";
 
 @Controller("users")
@@ -80,6 +81,7 @@ export class UsersController {
 	}
 
 	@Post(":id/resend-verify-email")
+	@PermissionAuth("user:update")
 	@ApiStandardResponses()
 	@ApiOkResponse({
 		description: "Verification email resent successfully",
@@ -112,7 +114,10 @@ export class UsersController {
 	@ApiStandardResponses({
 		validation: false,
 	})
-	@ApiDatatableQueries()
+	@ApiDatatableQueries({
+		sortFields: userSortableFields,
+		filterFields: userFilterableFields,
+	})
 	@ApiSuccessResponse(200, "Users retrieved successfully", {
 		data: [
 			{
@@ -171,6 +176,13 @@ export class UsersController {
 	@ApiStandardResponses({
 		validation: false,
 	})
+	@ApiSuccessResponse(200, "User fetched successfully", {
+		id: "user-id",
+		name: "John Doe",
+		email: "johndoe@example.com",
+		status: "ACTIVE",
+		roles: ["admin"],
+	})
 	@DefaultApiNotFoundResponse()
 	async findOne(@Param("id") id: string, @Res() res: FastifyReply) {
 		try {
@@ -192,6 +204,10 @@ export class UsersController {
 	@Patch(":id")
 	@PermissionAuth("user:update")
 	@ApiStandardResponses({})
+	@ApiSuccessResponse(200, "User updated successfully", null, {
+		type: "null",
+	})
+	@DefaultApiNotFoundResponse()
 	async update(
 		@Param("id") id: string,
 		@Body() updateUserDto: UpdateUserDto,
@@ -216,6 +232,10 @@ export class UsersController {
 	@Patch(":id/status")
 	@PermissionAuth("user:update")
 	@ApiStandardResponses({})
+	@ApiSuccessResponse(200, "User status updated successfully", null, {
+		type: "null",
+	})
+	@DefaultApiNotFoundResponse()
 	async updateStatus(
 		@Param("id") id: string,
 		@Body() updateStatusDto: UpdateStatusDto,
@@ -240,6 +260,10 @@ export class UsersController {
 	@Patch(":id/password")
 	@RoleAuth("superuser")
 	@ApiStandardResponses({})
+	@ApiSuccessResponse(200, "User password updated successfully", null, {
+		type: "null",
+	})
+	@DefaultApiNotFoundResponse()
 	async updatePassword(
 		@Param("id") id: string,
 		@Body() updatePasswordDto: UpdatePasswordDto,
@@ -265,6 +289,9 @@ export class UsersController {
 	@PermissionAuth("user:delete")
 	@ApiStandardResponses({
 		validation: false,
+	})
+	@ApiSuccessResponse(200, "User deleted successfully", null, {
+		type: "null",
 	})
 	@DefaultApiNotFoundResponse()
 	async remove(@Param("id") id: string, @Res() res: FastifyReply) {

@@ -97,3 +97,28 @@ await db.user.update({ where: { id }, data: { deletedAt: DateUtils.now().toDate(
 ## Comments
 
 One block comment per method, above the function. No line-by-line comments.
+
+## Sort and filter allow-lists are exported, not inline
+
+Every `findAll` validates the caller's `?sort=`, `?sortDirection=`, and `filter[<key>]` values against
+an allow-list and throws `BadRequestException` with a translated message when one does not match. An
+unrecognised value is **rejected, never silently ignored** — coercing it would return a successful
+page over the wrong rows, which the caller cannot distinguish from a real match.
+
+The allow-lists live at module scope and are **exported**, so the controller documents exactly what
+the repository enforces:
+
+```ts
+export const userSortableFields = Object.keys(userOrderableColumns);
+export const userFilterableFields = ["status", "name", "email", "role_id"];
+```
+
+```ts
+@ApiDatatableQueries({
+	sortFields: userSortableFields,
+	filterFields: userFilterableFields,
+})
+```
+
+Pass the constants — never restate the list in the controller, or `/docs` will drift from the
+validation and advertise a value that returns 400.

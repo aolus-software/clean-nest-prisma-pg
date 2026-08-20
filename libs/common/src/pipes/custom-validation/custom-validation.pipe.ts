@@ -35,7 +35,7 @@ export class CustomValidationPipe extends ValidationPipe {
 					statusCode: 422,
 					message: firstMessage,
 					data: null,
-					errors: formattedErrors,
+					error: formattedErrors,
 				});
 			},
 		});

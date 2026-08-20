@@ -16,7 +16,7 @@ responses are declared with `@ApiStandardResponses(...)` and the success body wi
 
 ## `@ApiStandardResponses` — the real option set
 
-The decorator accepts **exactly these six flags**, all defaulting to `true`:
+The decorator accepts **exactly these seven flags**, all defaulting to `true`:
 
 | Flag | Status | Swagger response |
 |---|---|---|
@@ -24,11 +24,11 @@ The decorator accepts **exactly these six flags**, all defaulting to `true`:
 | `unauthorized` | 401 | Unauthorized |
 | `forbidden` | 403 | Forbidden |
 | `validation` | 422 | Validation error (field payload) |
+| `tooManyRequests` | 429 | Too Many Requests |
 | `internalServerError` | 500 | Internal Server Error |
 | `serviceUnavailable` | 503 | Service Unavailable |
 
-There is **no `conflict` (409) flag and no `tooManyRequests` (429) flag** — do not pass them, they
-are silently ignored. 404 is **not** part of this decorator; document it separately with
+There is **no `conflict` (409) flag** — do not pass one, it is silently ignored. 404 is **not** part of this decorator; document it separately with
 `@DefaultApiNotFoundResponse("Entity")`. Pass a flag as `false` only when the endpoint genuinely
 cannot produce that status.
 
@@ -64,22 +64,15 @@ throw new UnprocessableEntityException({
 });
 ```
 
-> **Known divergence — do not copy it.** `CustomValidationPipe`'s `exceptionFactory`
-> (`libs/common/src/pipes/custom-validation/custom-validation.pipe.ts:38`) currently emits
-> `errors: formattedErrors` (plural). Since `handleError` spreads verbatim, a DTO-level validation
-> failure reaches the client under `errors` while Swagger and every hand-thrown 422 say `error`, so a
-> consumer parsing the documented contract cannot render an `@IsEmail` / `@IsStrongPassword` message
-> against the input that caused it — the message degrades to a form-level banner. The intended key is
-> `error`. Per `contradiction-halt.md` this is reported, not silently changed: raise it before
-> writing code that depends on either spelling.
+Both producers now agree: `CustomValidationPipe`'s `exceptionFactory` emits `error`, matching
+Swagger and every hand-thrown 422. A DTO-level failure and a service-level failure return the
+same shape from the same status code.
 
-### 409 and 429 happen, but cannot be declared through the decorator
+### 409 happens, but cannot be declared through the decorator
 
-`ThrottlerGuard` is registered as an `APP_GUARD` (`libs/common/src/throttler/throttler.module.ts`),
-so **every** route can throw `ThrottlerException` (429), which `handleError` echoes as a 429. A
-`ConflictException` likewise returns a real 409. Neither has a flag — add a raw
-`@ApiResponse({ status })` if a specific endpoint must document it. Full throttling policy:
-`rate-limiting.md`.
+A `ConflictException` returns a real 409 through `handleError`, but no flag exists for it — add a raw
+`@ApiResponse({ status: 409 })` if a specific endpoint must document it. 429 **is** covered, by the
+`tooManyRequests` flag. Full throttling policy: `rate-limiting.md`.
 
 ### Uniqueness and business validation use 422, not 409
 
@@ -92,8 +85,12 @@ rare-to-absent here.
 
 - **`forbidden: false` is never valid** on an endpoint behind `PermissionGuard` / `RoleGuard` — it
   can throw 403.
-- **`badRequest: false` is never valid on `findAll`** — the repository validates sort field, sort
-  direction, and filter keys and throws `BadRequestException` (see `repository.md`).
+- **`badRequest: false` is never valid on a `findAll`** — the repository validates the sort field,
+  the sort direction, and every `filter[...]` key against an exported allow-list and throws
+  `BadRequestException`. The allow-lists are `<entity>SortableFields` and `<entity>FilterableFields`,
+  exported from the repository and passed to `@ApiDatatableQueries({ sortFields, filterFields })` on
+  the controller so `/docs` shows exactly the values that are enforced. Keep the two in sync by
+  passing the constants — never restate the list. See `repository.md`.
 - **`badRequest: false` is acceptable on `findOne` / `remove`** that only throw `NotFoundException`;
   pair it with `@DefaultApiNotFoundResponse("Entity")`.
 - **`validation: false`** on read-only endpoints that accept no body.

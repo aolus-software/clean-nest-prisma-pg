@@ -48,10 +48,13 @@ This applies whether the contradiction is with:
 
 ## Known contradictions already on record
 
-These are documented in their rules and awaiting a decision. Do not build on either without raising
-it first:
+These are documented in their rules and awaiting a decision. Do not build on any of them without
+raising it first:
 
-- `CustomValidationPipe` emits the 422 field map as `errors` while Swagger and hand-thrown 422s use
-  `error` — `response-codes.md`.
-- `POST /users/:id/resend-verify-email` is authenticated but not permission-gated, and
-  `AuthController` has no `@ApiTags` — `routes.md`.
+- **There are no tests.** The repository contains zero `*.spec.ts` files, so none of the invariants in
+  these rules has a regression test.
+
+Resolved in the 2026-08-20 sweep (see `docs/audit-findings.md`): the 422 `errors`/`error` key, the
+ungated `resend-verify-email` route, the untagged `AuthController`, module-load token lifetimes, the
+self-exporting `ThrottlerModule`, the missing 429 flag, and the misspelled `role.repostory.ts`
+filename (now `role.repository.ts`, and exported from the repositories barrel).

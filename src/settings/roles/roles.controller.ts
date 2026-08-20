@@ -26,13 +26,11 @@ import {
 	ResponseHandler,
 } from "@common";
 import { defaultSort, paginationLength } from "@utils";
-import {
-	RoleDetail,
-	RoleList,
-} from "@repositories/repositories/role.repostory";
+import { RoleDetail, RoleList } from "@repositories";
 import { FastifyReply } from "fastify";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { ApiDatatableQueries } from "@common/decorators/api-datatable-queries/api-datatable-queries.decorator";
+import { roleSortableFields, roleFilterableFields } from "@repositories";
 import { I18nService } from "nestjs-i18n";
 
 @Controller("roles")
@@ -73,7 +71,10 @@ export class RolesController {
 	@ApiStandardResponses({
 		validation: false,
 	})
-	@ApiDatatableQueries()
+	@ApiDatatableQueries({
+		sortFields: roleSortableFields,
+		filterFields: roleFilterableFields,
+	})
 	@ApiSuccessResponse(
 		200,
 		"Roles fetched successfully",

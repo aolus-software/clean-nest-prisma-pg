@@ -25,9 +25,8 @@ Rate limiting is **global and always on**. `ThrottlerModule`
 
 When a client exceeds the limit, `ThrottlerGuard` throws `ThrottlerException`, an `HttpException`
 with status **429**. `ResponseHandler.handleError` echoes that status in the standard error envelope.
-`@ApiStandardResponses` has **no `tooManyRequests` flag**, so 429 is enforced but not auto-documented
-— add a raw `@ApiResponse({ status: 429 })` where an endpoint needs it in Swagger. See
-`response-codes.md`.
+`@ApiStandardResponses` carries a `tooManyRequests` flag defaulting to `true`, so 429 is documented
+on every endpoint by default. See `response-codes.md`.
 
 ## Per-route overrides
 
@@ -49,10 +48,3 @@ a `@SkipThrottle`.
 receives bursts from one upstream IP will blow past 60/60s and cause the sender to back off and
 retry. Such a route gets `@SkipThrottle()` (when the upstream already rate-limits itself) or a
 deliberately high `@Throttle(...)` — never the default.
-
-## Known wrinkle
-
-`ThrottlerModule` lists itself in its own `exports` array (`exports: [ThrottlerModule]`). It is inert
-rather than harmful — the guard is provided via `APP_GUARD`, which is global regardless — but it
-exports nothing usable. If you need consumers to inject `ThrottlerGuard` or the throttler storage,
-export those explicitly instead of re-exporting the module.

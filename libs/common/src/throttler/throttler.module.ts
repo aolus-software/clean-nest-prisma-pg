@@ -25,7 +25,5 @@ import { APP_GUARD } from "@nestjs/core";
 			useClass: ThrottlerGuard,
 		},
 	],
-
-	exports: [ThrottlerModule],
 })
 export class ThrottlerModule {}
