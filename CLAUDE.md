@@ -101,6 +101,6 @@ Highlights:
 
 ## Skills, rules, and commands
 
-- `.claude/rules/` — path-scoped coding standards for this codebase.
+- `.claude/rules/` — path-scoped coding standards for this codebase. [`.claude/rules/README.md`](.claude/rules/README.md) indexes all 20 with their scope; `contradiction-halt.md` and `documentation.md` apply to every change.
 - `.claude/commands/` — `/commit` (conventional commit workflow), `/update-todo`, and `/audit-flow` (read-only whole-codebase sweep that writes explained findings to `docs/audit-findings.md` and never fixes anything; its writing contract is `.claude/rules/audit-findings.md`).
 - `.claude/skills/` — engineering skills you maintain yourself (see the directory's README for the intended set).
