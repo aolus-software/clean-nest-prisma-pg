@@ -1,6 +1,6 @@
 ---
 name: commit-changes
-description: "Stage and commit current changes with a Conventional Commit message derived from the diff. Husky + lint-staged run bun lint/format on staged files via the pre-commit hook."
+description: "Stage and commit current changes with a Conventional Commit message derived from the diff. A heavy Husky pre-commit hook runs install, format, lint, migrations, typecheck and build against the whole tree."
 risk: safe
 source: local
 ---
@@ -33,7 +33,7 @@ source: local
    - `chore: bump nestjs to 11.1.24`
 
    The summary must be lowercase after the colon, imperative ("add"/"fix", not "added"/"fixes"), under 72 chars, no trailing period.
-7. The Husky pre-commit hook runs `lint-staged` (`bun run lint` + `bun run format`). If you already ran `make lint`, `make format`, and `make build` this session and they passed, you may `git commit -m "..." --no-verify`.
+7. The Husky pre-commit hook is **not** `lint-staged` — it runs `bun install`, `format`, `lint`, `prisma migrate deploy`, `prisma generate`, `tsc --noEmit`, and `build` against the **whole tree**, so it rewrites unstaged files and applies pending migrations to `DATABASE_URL`. Check `git status` afterwards. If you already ran `make lint`, `make format`, and `make build` this session and they passed, you may `git commit -m "..." --no-verify`.
 8. After committing, report the commit hash + message, the files included, and whether lint/format made any auto-fixes.
 9. Ask the user whether to push.
 

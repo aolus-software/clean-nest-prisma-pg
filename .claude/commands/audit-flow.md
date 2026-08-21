@@ -152,6 +152,6 @@ reached** rather than letting silence imply they were clean.
 - **Cite `file:line` for every finding.** No finding without a location.
 - **Explain, don't just point.** A finding a reader must open the code to understand has not been
   written yet.
-- **Known findings already on record** in `.claude/rules/contradiction-halt.md` (the `errors`/`error`
-  422 key, the ungated `resend-verify-email` route, the untagged `AuthController`) are still swept and
-  still written up — a rule noting them is not a substitute for the report carrying them.
+- **Invariants already on record** in `.claude/rules/contradiction-halt.md` (the absent tests) are
+  still swept and still written up — a rule noting an invariant is not a substitute for the report
+  carrying a breach of it with evidence.

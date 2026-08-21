@@ -103,10 +103,10 @@ change — that is `documentation.md`.
 
 ## Known gaps in the current map
 
-None outstanding. The two gaps recorded in the 2026-08-20 sweep are fixed:
-`POST /users/:id/resend-verify-email` now carries `@PermissionAuth("user:update")` like every sibling
-route, and `AuthController` and `AppController` now carry `@ApiTags("Auth")` and `@ApiTags("App")`.
-See `docs/audit-findings.md`.
+None outstanding. Every route carries a `@PermissionAuth(...)`, and every controller carries an
+`@ApiTags(...)` — the two things easiest to forget when adding one. A missing `@PermissionAuth` is
+reachable by any authenticated caller; a missing `@ApiTags` silently drops the controller out of its
+Swagger group.
 
 ## Swagger tagging
 

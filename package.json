@@ -25,8 +25,7 @@
 		"prepare": "husky",
 		"seed": "ts-node -r tsconfig-paths/register prisma/seed/index.ts",
 		"seed:file": "ts-node -r tsconfig-paths/register prisma/seed/$FILE.ts",
-		"dev": "NODE_OPTIONS='-r tsconfig-paths/register' nest start --watch",
-		"lint-staged": "lint-staged"
+		"dev": "NODE_OPTIONS='-r tsconfig-paths/register' nest start --watch"
 	},
 	"dependencies": {
 		"@fastify/helmet": "^13.1.1",
@@ -62,7 +61,6 @@
 		"fastify": "5.11.3",
 		"handlebars": "^4.7.9",
 		"ioredis": "^5.11.1",
-		"lint-staged": "^17.3.0",
 		"nestjs-i18n": "^10.8.5",
 		"nodemailer": "^8.0.11",
 		"passport": "^0.7.0",
@@ -132,11 +130,5 @@
 			"^@repositories/repositories(|/.*)$": "<rootDir>/libs/repositories/src/$1",
 			"^@utils(|/.*)$": "<rootDir>/libs/utils/src/$1"
 		}
-	},
-	"lint-staged": {
-		"*.{ts,js}": [
-			"bun run lint",
-			"bun run format"
-		]
 	}
 }

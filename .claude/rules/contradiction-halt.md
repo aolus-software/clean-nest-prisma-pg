@@ -46,15 +46,10 @@ This applies whether the contradiction is with:
 - It does not license scope creep in the other direction either: noticing an unrelated defect means
   *reporting* it, not fixing it inside the current change.
 
-## Known contradictions already on record
+## Invariants and known sharp edges
 
-These are documented in their rules and awaiting a decision. Do not build on any of them without
-raising it first:
+Confirmed facts about this repository as it stands. Do not build on any of them without raising it
+first:
 
 - **There are no tests.** The repository contains zero `*.spec.ts` files, so none of the invariants in
   these rules has a regression test.
-
-Resolved in the 2026-08-20 sweep (see `docs/audit-findings.md`): the 422 `errors`/`error` key, the
-ungated `resend-verify-email` route, the untagged `AuthController`, module-load token lifetimes, the
-self-exporting `ThrottlerModule`, the missing 429 flag, and the misspelled `role.repostory.ts`
-filename (now `role.repository.ts`, and exported from the repositories barrel).
