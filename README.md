@@ -163,7 +163,7 @@ API_DOCS_ENABLED=true
 FRONTEND_URL=http://localhost:3000
 
 # Database
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/clean_nest?schema=public"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/app_db?schema=public"
 
 # JWT Authentication
 JWT_SECRET=your_secret_key_here
