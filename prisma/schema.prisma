@@ -42,7 +42,7 @@ model User {
 model EmailVerification {
   id        String       @id @default(uuid()) @db.Uuid
   userId    String   @db.Uuid
-  token      String   @db.VarChar(255)
+  token      String   @unique @db.VarChar(255)
   expiresAt DateTime
   usedAt   DateTime?
   createdAt DateTime @default(now())
@@ -55,7 +55,7 @@ model EmailVerification {
 model ResetPassword {
   id        String       @id @default(uuid()) @db.Uuid
   userId    String   @db.Uuid
-  token      String   @db.VarChar(255)
+  token      String   @unique @db.VarChar(255)
   expiresAt DateTime
   usedAt   DateTime?
   createdAt DateTime @default(now())
