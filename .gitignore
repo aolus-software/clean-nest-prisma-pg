@@ -56,3 +56,6 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 /generated/prisma
+
+# Skill bundle is vendored in .agents/skills/; provenance lock is not tracked
+skills-lock.json
