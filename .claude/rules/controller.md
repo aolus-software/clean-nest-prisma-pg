@@ -53,16 +53,35 @@ These import from `@common` (except `@ApiTags`, `@ApiBearerAuth`, `@ApiOkRespons
 
 ## Guards and authorization
 
-Apply guards once at the class level when all endpoints share auth, then gate individual methods with permission/role decorators:
+**All three guards are global.** `AuthGuard`, `PermissionGuard` and `RoleGuard` are registered as
+`APP_GUARD` providers, in that order, so every route is authenticated by default and a controller
+does **not** carry `@UseGuards`. Gate individual methods with the permission/role decorators:
 
 ```ts
 @Controller("users")
-@UseGuards(AuthGuard, PermissionGuard, RoleGuard)
 @ApiTags("Settings/Users")
 @ApiBearerAuth("Bearer")
-export class UsersController { ... }
+export class UsersController {
+	@Get()
+	@PermissionAuth("user:list")
+	async findAll(...) { ... }
+}
 ```
 
-- `@PermissionAuth("user:create")` — permission gate (`entity:action`, entity singular).
-- `@RoleAuth("superuser")` — role gate.
+- `@PermissionAuth("user:create")` — permission gate (`entity:action`, entity singular). **All listed
+  permissions are required** — the guard uses `.every(...)`, so two strings mean both.
+- `@RoleAuth("superuser")` — role gate. Holding **any one** of the listed roles is enough.
+- `@Public()` — the only way out of authentication. Put it on the handler, or on the controller when
+  every route is public (`AppController`, `HealthController`, the six public auth routes).
 - `@CurrentUser()` — inject the authenticated `UserInformation`.
+
+Both RBAC guards read metadata with `getAllAndOverride([getHandler(), getClass()])`, so a class-level
+`@PermissionAuth` / `@RoleAuth` gates every method on that controller. **This used not to be true**:
+the guards read only `getHandler()`, so a class-level `@RoleAuth("superuser")` was silently ignored
+and the whole permissions controller was reachable by any authenticated user. Never narrow that read
+back to the handler alone.
+
+**A new controller is protected by default.** Adding one without `@PermissionAuth` makes its routes
+reachable by any authenticated caller — the guards allow what they have no metadata for. Ordering is
+load-bearing too: `AuthGuard` must be registered before the RBAC guards, or `request.user` is unset
+when they run and an unauthenticated request gets 403 instead of 401.

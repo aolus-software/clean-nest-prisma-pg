@@ -8,7 +8,6 @@ import {
 	Delete,
 	Res,
 	Query,
-	UseGuards,
 } from "@nestjs/common";
 import { UsersService } from "./users.service";
 import { CreateUserDto } from "./dto/create-user.dto";
@@ -17,15 +16,12 @@ import { UpdateUserDto } from "./dto/update-user.dto";
 import {
 	ApiStandardResponses,
 	ApiSuccessResponse,
-	AuthGuard,
 	DatatableType,
 	DefaultApiNotFoundResponse,
 	FilterValidationPipe,
 	PermissionAuth,
-	PermissionGuard,
 	ResponseHandler,
 	RoleAuth,
-	RoleGuard,
 } from "@common";
 import { defaultSort, paginationLength } from "@utils";
 import { UpdateStatusDto } from "./dto/update-status.dto";
@@ -42,7 +38,6 @@ import { userSortableFields, userFilterableFields } from "@repositories";
 import { I18nService } from "nestjs-i18n";
 
 @Controller("users")
-@UseGuards(AuthGuard, PermissionGuard, RoleGuard)
 @ApiTags("Settings/Users")
 @ApiBearerAuth("Bearer")
 export class UsersController {

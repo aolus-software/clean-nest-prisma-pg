@@ -14,10 +14,13 @@ export class RoleGuard implements CanActivate {
 	constructor(private reflector: Reflector) {}
 
 	canActivate(context: ExecutionContext): boolean {
-		const requiredRoles = this.reflector.get<string[]>(
-			"roles",
+		/* Read the handler first and fall back to the controller class, so a
+		   class-level @RoleAuth gates every method on it. Reading only
+		   getHandler() silently ignores a class-level declaration. */
+		const requiredRoles = this.reflector.getAllAndOverride<string[]>("roles", [
 			context.getHandler(),
-		);
+			context.getClass(),
+		]);
 
 		if (!requiredRoles) {
 			return true;
@@ -36,6 +39,8 @@ export class RoleGuard implements CanActivate {
 			return true;
 		}
 
+		/* Holding any one of the listed roles is enough — unlike permissions,
+		   which are conjunctive. See .claude/rules/rbac.md. */
 		const hasRole = requiredRoles.some((role) =>
 			user.roles.some((userRole) => userRole.name === role),
 		);

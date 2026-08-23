@@ -12,12 +12,14 @@ import { UpdatePasswordDto } from "./dto/update-password.dto";
 import { UpdateStatusDto } from "./dto/update-status.dto";
 import { getEnv } from "@config";
 import { I18nService } from "nestjs-i18n";
+import { CacheService, UserCache } from "@common";
 
 @Injectable()
 export class UsersService {
 	constructor(
 		private readonly mailService: MailService,
 		private readonly i18n: I18nService,
+		private readonly cacheService: CacheService,
 	) {}
 
 	async create(createUserDto: CreateUserDto): Promise<void> {
@@ -147,6 +149,12 @@ export class UsersService {
 				},
 			});
 		});
+
+		/* AuthStrategy resolves the caller's roles and permissions from this
+		   cache entry, so a write that changes identity or authorization has to
+		   drop it. Leaving it means a revoked role stays in force until the
+		   entry expires. */
+		await this.cacheService.del(UserCache(id));
 	}
 
 	async remove(id: string): Promise<void> {
@@ -165,6 +173,12 @@ export class UsersService {
 				},
 			});
 		});
+
+		/* AuthStrategy resolves the caller's roles and permissions from this
+		   cache entry, so a write that changes identity or authorization has to
+		   drop it. Leaving it means a revoked role stays in force until the
+		   entry expires. */
+		await this.cacheService.del(UserCache(id));
 	}
 
 	async updateStatus(id: string, data: UpdateStatusDto): Promise<void> {
@@ -181,6 +195,12 @@ export class UsersService {
 				status: data.status,
 			},
 		});
+
+		/* AuthStrategy resolves the caller's roles and permissions from this
+		   cache entry, so a write that changes identity or authorization has to
+		   drop it. Leaving it means a revoked role stays in force until the
+		   entry expires. */
+		await this.cacheService.del(UserCache(id));
 	}
 
 	async updatePassword(id: string, data: UpdatePasswordDto): Promise<void> {

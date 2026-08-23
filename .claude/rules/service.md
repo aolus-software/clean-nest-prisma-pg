@@ -61,7 +61,7 @@ Fetch-then-act: verify the entity exists before update/delete and throw the righ
 
 | Scenario | Exception |
 |---|---|
-| Entity not found | `NotFoundException("User with ID ${id} not found")` |
+| Entity not found | `NotFoundException(this.i18n.t("message.user.not_found", { args: { id } }))` |
 | Field-level validation failure (e.g. duplicate email) | `UnprocessableEntityException({ message, error: { field: [...] } })` |
 
 The `UnprocessableEntityException` payload shape matters — `ResponseHandler.handleError` unpacks `error: { field: ["msg"] }` into the 422 response. Use it for anything the client should see mapped to a form field.
@@ -69,3 +69,11 @@ The `UnprocessableEntityException` payload shape matters — `ResponseHandler.ha
 ## Comments
 
 One block comment per method, above the signature. No line-by-line comments. No `console.*` — use `LoggerUtils` from `@utils`.
+
+## Exception messages are i18n lookups, never literals
+
+Every message reaching a client goes through `this.i18n.t(...)` — see [i18n.md](./i18n.md), which is
+the authority. The examples in this file used to show bare English template literals
+(`` `User with ID ${id} not found` ``), which contradicted that rule: anyone following this file wrote
+untranslated exceptions and was compliant with the rule they had read. The examples above are the
+correct form.

@@ -14,9 +14,13 @@ export class PermissionGuard implements CanActivate {
 	constructor(private reflector: Reflector) {}
 
 	canActivate(context: ExecutionContext): boolean {
-		const requiredPermissions = this.reflector.get<string[]>(
+		/* Read the handler first and fall back to the controller class, so a
+		   class-level @PermissionAuth gates every method on it. Reading only
+		   getHandler() silently ignores a class-level declaration: the guard
+		   finds no metadata and allows the request. */
+		const requiredPermissions = this.reflector.getAllAndOverride<string[]>(
 			"permissions",
-			context.getHandler(),
+			[context.getHandler(), context.getClass()],
 		);
 
 		if (!requiredPermissions) {
@@ -36,7 +40,9 @@ export class PermissionGuard implements CanActivate {
 			return true;
 		}
 
-		const hasPermission = requiredPermissions.some((permission) =>
+		/* Every listed permission is required. A route naming two permissions
+		   means both, not either. */
+		const hasPermission = requiredPermissions.every((permission) =>
 			user.permissions.includes(permission),
 		);
 

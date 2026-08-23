@@ -9,10 +9,29 @@ import { prisma } from "@repositories";
 import { DatatableType, PaginationResponse } from "@common";
 import { RoleDetail, RoleList, RoleRepository } from "@repositories";
 import { I18nService } from "nestjs-i18n";
+import { CacheService, UserCache } from "@common";
 
 @Injectable()
 export class RolesService {
-	constructor(private readonly i18n: I18nService) {}
+	constructor(
+		private readonly i18n: I18nService,
+		private readonly cacheService: CacheService,
+	) {}
+
+	/* Drops the cached identity of every user holding this role. A role's
+	   permission set is part of what AuthStrategy caches per user, so changing
+	   or deleting the role has to invalidate all of its holders — not just the
+	   caller who made the change. */
+	private async invalidateRoleHolders(roleId: string): Promise<void> {
+		const holders = await prisma.userRole.findMany({
+			where: { roleId },
+			select: { userId: true },
+		});
+
+		await Promise.all(
+			holders.map((holder) => this.cacheService.del(UserCache(holder.userId))),
+		);
+	}
 
 	async create(createRoleDto: CreateRoleDto): Promise<void> {
 		const isNameExists = await prisma.role.findFirst({
@@ -141,6 +160,8 @@ export class RolesService {
 				data: rolePermissionsData,
 			});
 		});
+
+		await this.invalidateRoleHolders(id);
 	}
 
 	async remove(id: string): Promise<void> {
@@ -153,6 +174,12 @@ export class RolesService {
 			throw new NotFoundException(this.i18n.t("message.role.not_found"));
 		}
 
+		/* Collected before the delete — the join rows are gone afterwards. */
+		const holders = await prisma.userRole.findMany({
+			where: { roleId: id },
+			select: { userId: true },
+		});
+
 		await prisma.$transaction(async (tx) => {
 			await tx.rolePermission.deleteMany({
 				where: { roleId: id },
@@ -161,5 +188,9 @@ export class RolesService {
 				where: { id },
 			});
 		});
+
+		await Promise.all(
+			holders.map((holder) => this.cacheService.del(UserCache(holder.userId))),
+		);
 	}
 }

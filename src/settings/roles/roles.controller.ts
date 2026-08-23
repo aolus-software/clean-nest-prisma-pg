@@ -8,7 +8,6 @@ import {
 	Delete,
 	Res,
 	Query,
-	UseGuards,
 } from "@nestjs/common";
 import { RolesService } from "./roles.service";
 import { CreateRoleDto } from "./dto/create-role.dto";
@@ -16,13 +15,11 @@ import { UpdateRoleDto } from "./dto/update-role.dto";
 import {
 	ApiStandardResponses,
 	ApiSuccessResponse,
-	AuthGuard,
 	DatatableType,
 	DefaultApiNotFoundResponse,
 	FilterValidationPipe,
 	PaginationResponse,
 	PermissionAuth,
-	PermissionGuard,
 	ResponseHandler,
 } from "@common";
 import { defaultSort, paginationLength } from "@utils";
@@ -34,7 +31,6 @@ import { roleSortableFields, roleFilterableFields } from "@repositories";
 import { I18nService } from "nestjs-i18n";
 
 @Controller("roles")
-@UseGuards(AuthGuard, PermissionGuard)
 @ApiTags("Settings/Roles")
 @ApiBearerAuth("Bearer")
 export class RolesController {

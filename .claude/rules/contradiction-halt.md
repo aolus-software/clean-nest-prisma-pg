@@ -51,5 +51,21 @@ This applies whether the contradiction is with:
 Confirmed facts about this repository as it stands. Do not build on any of them without raising it
 first:
 
+- **All three guards are global `APP_GUARD` providers, registered in order.** `AuthGuard` first, then
+  `PermissionGuard`, then `RoleGuard`. Every route is authenticated by default; `@Public()` is the
+  only opt-out. Two things break silently if disturbed: registering the RBAC guards before
+  `AuthGuard` makes unauthenticated requests 403 instead of 401 (they run before `request.user`
+  exists), and narrowing the guards' `getAllAndOverride([getHandler(), getClass()])` back to
+  `getHandler()` alone makes every class-level `@PermissionAuth` / `@RoleAuth` silently inert.
+- **`@PermissionAuth` is conjunctive; `@RoleAuth` is disjunctive.** The permission guard uses
+  `.every(...)` — two strings mean both are required. The role guard uses `.some(...)` — any one
+  suffices. Both short-circuit for `superuser`.
+- **The cached `UserInformation` must be invalidated wherever authorization changes.** `AuthStrategy`
+  resolves roles and permissions from `user:<id>` in Redis. The user update / delete / status paths
+  drop the caller's entry, and the role update / delete paths drop the entry of **every holder** of
+  that role. Skipping it leaves a revoked role in force until the entry expires.
+- **Cache TTLs are seconds at the call site and milliseconds at the store.** `CacheService.set` takes
+  seconds and multiplies; `CacheModule` does the same for its default. Passing a seconds value
+  straight to `cache-manager` expires it 1000x too early.
 - **There are no tests.** The repository contains zero `*.spec.ts` files, so none of the invariants in
   these rules has a regression test.

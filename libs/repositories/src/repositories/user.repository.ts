@@ -1,8 +1,11 @@
-import { DatatableType, PaginationResponse } from "@common";
+import {
+	DatatableType,
+	PaginationResponse,
+	parseDateRangeFilter,
+} from "@common";
 import { BadRequestException } from "@nestjs/common";
 import { Prisma, UserStatus } from "@prisma/client";
 import { prisma } from "@repositories";
-import { DateUtils } from "@utils";
 import { I18nContext } from "nestjs-i18n";
 
 export interface UserInformation {
@@ -114,9 +117,21 @@ export function UserRepository(tx?: Prisma.TransactionClient) {
 			let filterCondition: Prisma.UserWhereInput = { deletedAt: null };
 			if (queryParam.filter) {
 				if (queryParam.filter["status"]) {
+					/* The key is allow-listed above; the value was not. An
+					   unrecognised member cast straight to the enum reaches
+					   Prisma and fails validation as a 500 — reject it here as
+					   the 400 the allow-list machinery exists to produce. */
+					const status = queryParam.filter["status"].toString();
+					if (!Object.values(UserStatus).includes(status as UserStatus)) {
+						throw new BadRequestException(
+							I18nContext.current()?.t("message.common.invalid_filter_field") ??
+								"Invalid filter field",
+						);
+					}
+
 					filterCondition = {
 						...filterCondition,
-						status: queryParam.filter["status"] as UserStatus,
+						status: status as UserStatus,
 					};
 				}
 
@@ -143,21 +158,20 @@ export function UserRepository(tx?: Prisma.TransactionClient) {
 				if (queryParam.filter["name"]) {
 					filterCondition = {
 						...filterCondition,
-						name: queryParam.filter["name"].toString(),
+						name: {
+							contains: queryParam.filter["name"].toString(),
+							mode: "insensitive",
+						},
 					};
 				}
 
 				if (queryParam.filter["email"]) {
 					filterCondition = {
 						...filterCondition,
-						email: queryParam.filter["email"].toString(),
-					};
-				}
-
-				if (queryParam.filter["status"]) {
-					filterCondition = {
-						...filterCondition,
-						status: queryParam.filter["status"] as UserStatus,
+						email: {
+							contains: queryParam.filter["email"].toString(),
+							mode: "insensitive",
+						},
 					};
 				}
 
@@ -165,16 +179,12 @@ export function UserRepository(tx?: Prisma.TransactionClient) {
 					queryParam.filter["createdAt"] &&
 					typeof queryParam.filter["createdAt"] === "string"
 				) {
-					const [startDate, endDate] =
-						queryParam.filter["createdAt"].split(",");
 					filterCondition = {
 						...filterCondition,
-						createdAt: {
-							gte: DateUtils.parse(startDate).toDate(),
-							...(endDate && {
-								lte: DateUtils.parse(endDate).toDate(),
-							}),
-						},
+						createdAt: parseDateRangeFilter(
+							queryParam.filter["createdAt"],
+							"createdAt",
+						),
 					};
 				}
 
@@ -182,16 +192,12 @@ export function UserRepository(tx?: Prisma.TransactionClient) {
 					queryParam.filter["updatedAt"] &&
 					typeof queryParam.filter["updatedAt"] === "string"
 				) {
-					const [startDate, endDate] =
-						queryParam.filter["updatedAt"].split(",");
 					filterCondition = {
 						...filterCondition,
-						updatedAt: {
-							gte: DateUtils.parse(startDate).toDate(),
-							...(endDate && {
-								lte: DateUtils.parse(endDate).toDate(),
-							}),
-						},
+						updatedAt: parseDateRangeFilter(
+							queryParam.filter["updatedAt"],
+							"updatedAt",
+						),
 					};
 				}
 			}

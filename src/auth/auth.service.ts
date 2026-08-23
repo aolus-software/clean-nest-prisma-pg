@@ -19,6 +19,11 @@ import { ResetPasswordTokenValidationDto } from "./dto/reset-password-token-vali
 import { getEnv } from "@config";
 import { I18nService } from "nestjs-i18n";
 
+/* A real bcrypt hash of a value nobody holds. Compared against when the email
+   does not resolve, purely so the failed-login path costs the same either way. */
+const TIMING_EQUALISER_HASH =
+	"$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy";
+
 @Injectable()
 export class AuthService {
 	constructor(
@@ -33,7 +38,19 @@ export class AuthService {
 		refreshToken: string;
 	}> {
 		const user = await UserRepository().findByMail(data.email);
-		if (!user) {
+
+		/* Verify the password before looking at account state, and answer an
+		   unknown address and a wrong password with the same message. Checking
+		   "is this email verified" first would let an unauthenticated caller
+		   tell a registered address from an unknown one without ever holding a
+		   valid password. The dummy comparison keeps the response time for an
+		   unknown address in line with a real one, so timing does not leak what
+		   the message no longer does. */
+		const isPasswordValid = user
+			? await HashUtils.compareHash(data.password, user.password)
+			: await HashUtils.compareHash(data.password, TIMING_EQUALISER_HASH);
+
+		if (!user || !isPasswordValid) {
 			throw new UnprocessableEntityException({
 				message: this.i18n.t("message.auth.invalid_credentials"),
 				error: {
@@ -47,19 +64,6 @@ export class AuthService {
 				message: this.i18n.t("message.auth.verify_email_required"),
 				error: {
 					email: [this.i18n.t("message.auth.verify_email_required")],
-				},
-			});
-		}
-
-		const isPasswordValid = await HashUtils.compareHash(
-			data.password,
-			user.password,
-		);
-		if (!isPasswordValid) {
-			throw new UnprocessableEntityException({
-				message: this.i18n.t("message.auth.invalid_credentials"),
-				error: {
-					email: [this.i18n.t("message.auth.invalid_credentials")],
 				},
 			});
 		}
@@ -113,7 +117,13 @@ export class AuthService {
 		}
 
 		const hashedPassword = await HashUtils.generateHash(data.password);
-		await prisma.$transaction(async (tx) => {
+
+		/* The mail is enqueued only after the transaction commits. Redis and
+		   Postgres share no transaction, so enqueuing inside the callback lets
+		   the worker send a verification link whose token row is not committed
+		   yet — or send one at all for a registration that rolled back. This is
+		   what .claude/rules/queue.md rule 11 already requires. */
+		const token = await prisma.$transaction(async (tx) => {
 			const newUser = await tx.user.create({
 				data: {
 					name: data.name,
@@ -122,24 +132,26 @@ export class AuthService {
 				},
 			});
 
-			const token = StrUtils.random(255);
+			const verificationToken = StrUtils.random(255);
 			await tx.emailVerification.create({
 				data: {
 					userId: newUser.id,
-					token,
+					token: verificationToken,
 					expiresAt: emailVerificationLifetime(),
 				},
 			});
 
-			await this.mailService.sendMail({
-				subject: this.i18n.t("email.verify_email.subject"),
-				to: data.email,
-				template: "auth/verify-email",
-				context: {
-					name: data.name,
-					verifyUrl: `${getEnv().FRONTEND_URL}/verify-email?token=${token}`,
-				},
-			});
+			return verificationToken;
+		});
+
+		await this.mailService.sendMail({
+			subject: this.i18n.t("email.verify_email.subject"),
+			to: data.email,
+			template: "auth/verify-email",
+			context: {
+				name: data.name,
+				verifyUrl: `${getEnv().FRONTEND_URL}/verify-email?token=${token}`,
+			},
 		});
 	}
 
@@ -151,13 +163,12 @@ export class AuthService {
 			return;
 		}
 
+		/* Already verified: return as though the mail was sent. Throwing here
+		   would tell an unauthenticated caller that the address is registered
+		   and verified, which is what the silent branch above exists to
+		   prevent. */
 		if (user.emailVerifiedAt) {
-			throw new UnprocessableEntityException({
-				message: this.i18n.t("message.auth.email_already_verified"),
-				error: {
-					email: [this.i18n.t("message.auth.email_already_verified")],
-				},
-			});
+			return;
 		}
 
 		const token = StrUtils.random(255);
@@ -237,13 +248,11 @@ export class AuthService {
 			return;
 		}
 
+		/* Not yet verified: return silently rather than throwing. A distinct
+		   error here would reveal that the address is registered — the same
+		   disclosure the unknown-address branch above avoids. */
 		if (!user.emailVerifiedAt) {
-			throw new UnprocessableEntityException({
-				message: this.i18n.t("message.auth.verify_email_required"),
-				error: {
-					email: [this.i18n.t("message.auth.verify_email_required")],
-				},
-			});
+			return;
 		}
 
 		const token = StrUtils.random(255);

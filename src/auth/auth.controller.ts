@@ -1,10 +1,10 @@
-import { Body, Controller, Get, Post, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Post, Res } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
 import {
 	ApiStandardResponses,
-	AuthGuard,
 	CurrentUser,
+	Public,
 	ResponseHandler,
 } from "@common";
 import { UserInformation } from "@repositories";
@@ -28,6 +28,7 @@ export class AuthController {
 		private readonly i18n: I18nService,
 	) {}
 
+	@Public()
 	@Post("/login")
 	@ApiSuccessResponse(
 		200,
@@ -110,6 +111,7 @@ export class AuthController {
 		}
 	}
 
+	@Public()
 	@Post("/register")
 	@ApiSuccessResponse(
 		201,
@@ -137,6 +139,7 @@ export class AuthController {
 		}
 	}
 
+	@Public()
 	@Post("/resend-verification-email")
 	@ApiSuccessResponse(200, "Verification email resent successfully", null)
 	@ApiStandardResponses({
@@ -163,6 +166,7 @@ export class AuthController {
 		}
 	}
 
+	@Public()
 	@Post("/verify-email")
 	@ApiSuccessResponse(200, "Email verified successfully", null)
 	@ApiStandardResponses({
@@ -189,6 +193,7 @@ export class AuthController {
 		}
 	}
 
+	@Public()
 	@Post("/forgot-password")
 	@ApiSuccessResponse(200, "Password reset email sent successfully", null)
 	@ApiStandardResponses({
@@ -215,6 +220,7 @@ export class AuthController {
 		}
 	}
 
+	@Public()
 	@Post("/validate-reset-password-token")
 	@ApiSuccessResponse(200, "Reset password token validation successful", {
 		isValid: true,
@@ -243,6 +249,7 @@ export class AuthController {
 		}
 	}
 
+	@Public()
 	@Post("/reset-password")
 	@ApiSuccessResponse(200, "Password reset successfully", null)
 	@ApiStandardResponses({
@@ -270,7 +277,6 @@ export class AuthController {
 	}
 
 	@Get("/profile")
-	@UseGuards(AuthGuard)
 	@ApiBearerAuth("Bearer")
 	@ApiSuccessResponse(
 		200,

@@ -8,7 +8,6 @@ import {
 	Delete,
 	Res,
 	Query,
-	UseGuards,
 } from "@nestjs/common";
 import { PermissionsService } from "./permissions.service";
 import { CreatePermissionDto } from "./dto/create-permission.dto";
@@ -16,14 +15,12 @@ import { UpdatePermissionDto } from "./dto/update-permission.dto";
 import {
 	ApiStandardResponses,
 	ApiSuccessResponse,
-	AuthGuard,
 	DatatableType,
 	DefaultApiNotFoundResponse,
 	FilterValidationPipe,
 	PaginationResponse,
 	ResponseHandler,
 	RoleAuth,
-	RoleGuard,
 } from "@common";
 import { PermissionList } from "@repositories";
 import { defaultSort, paginationLength } from "@utils";
@@ -37,7 +34,6 @@ import {
 import { I18nService } from "nestjs-i18n";
 
 @Controller("permissions")
-@UseGuards(AuthGuard, RoleGuard)
 @RoleAuth("superuser")
 @ApiTags("Settings/Permissions")
 @ApiBearerAuth("Bearer")

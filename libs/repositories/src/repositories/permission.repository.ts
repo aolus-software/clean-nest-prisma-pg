@@ -86,14 +86,20 @@ export function PermissionRepository(tx?: Prisma.TransactionClient) {
 				if (queryParam.filter["name"]) {
 					filterCondition = {
 						...filterCondition,
-						name: queryParam.filter["name"].toString(),
+						name: {
+							contains: queryParam.filter["name"].toString(),
+							mode: "insensitive",
+						},
 					};
 				}
 
 				if (queryParam.filter["group"]) {
 					filterCondition = {
 						...filterCondition,
-						group: queryParam.filter["group"].toString(),
+						group: {
+							contains: queryParam.filter["group"].toString(),
+							mode: "insensitive",
+						},
 					};
 				}
 			}

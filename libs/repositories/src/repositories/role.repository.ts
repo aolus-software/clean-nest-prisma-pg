@@ -1,9 +1,8 @@
-import { DatatableType } from "@common";
+import { DatatableType, parseDateRangeFilter } from "@common";
 import { BadRequestException } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@repositories";
 import { PaginationResponse } from "../../../common/src/types/datatable";
-import { DateUtils } from "@utils";
 import { I18nContext } from "nestjs-i18n";
 
 export interface RoleList {
@@ -83,7 +82,10 @@ export function RoleRepository(tx?: Prisma.TransactionClient) {
 				if (queryParam.filter["name"]) {
 					filterCondition = {
 						...filterCondition,
-						name: queryParam.filter["name"].toString(),
+						name: {
+							contains: queryParam.filter["name"].toString(),
+							mode: "insensitive",
+						},
 					};
 				}
 
@@ -91,16 +93,12 @@ export function RoleRepository(tx?: Prisma.TransactionClient) {
 					queryParam.filter["createdAt"] &&
 					typeof queryParam.filter["createdAt"] === "string"
 				) {
-					const [startDate, endDate] =
-						queryParam.filter["createdAt"].split(",");
 					filterCondition = {
 						...filterCondition,
-						createdAt: {
-							gte: DateUtils.parse(startDate).toDate(),
-							...(endDate && {
-								lte: DateUtils.parse(endDate).toDate(),
-							}),
-						},
+						createdAt: parseDateRangeFilter(
+							queryParam.filter["createdAt"],
+							"createdAt",
+						),
 					};
 				}
 
@@ -108,16 +106,12 @@ export function RoleRepository(tx?: Prisma.TransactionClient) {
 					queryParam.filter["updatedAt"] &&
 					typeof queryParam.filter["updatedAt"] === "string"
 				) {
-					const [startDate, endDate] =
-						queryParam.filter["updatedAt"].split(",");
 					filterCondition = {
 						...filterCondition,
-						updatedAt: {
-							gte: DateUtils.parse(startDate).toDate(),
-							...(endDate && {
-								lte: DateUtils.parse(endDate).toDate(),
-							}),
-						},
+						updatedAt: parseDateRangeFilter(
+							queryParam.filter["updatedAt"],
+							"updatedAt",
+						),
 					};
 				}
 			}

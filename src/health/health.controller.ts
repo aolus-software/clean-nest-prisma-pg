@@ -1,4 +1,5 @@
 import { Controller, Get } from "@nestjs/common";
+import { Public } from "@common";
 import { ApiTags } from "@nestjs/swagger";
 import {
 	HealthCheck,
@@ -8,6 +9,7 @@ import {
 } from "@nestjs/terminus";
 import { prisma } from "@repositories";
 
+@Public()
 @Controller("health")
 @ApiTags("Health")
 export class HealthController {

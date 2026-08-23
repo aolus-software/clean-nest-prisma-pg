@@ -1,4 +1,4 @@
-import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { OnWorkerEvent, Processor, WorkerHost } from "@nestjs/bullmq";
 import { Injectable } from "@nestjs/common";
 import { Job } from "bullmq";
 import { ISendMailOptions, MailerService } from "@nestjs-modules/mailer";
@@ -33,5 +33,17 @@ export class MailProcessor extends WorkerHost {
 		message += job.data.replyTo ? `replyTo: ${format(job.data.replyTo)}, ` : "";
 
 		LoggerUtils.info(message);
+	}
+
+	/* Fires once a job has exhausted every attempt. Without it a permanently
+	   failed email leaves no trace at all — the job moves to the failed set and
+	   nothing is logged, so an operator has nothing to correlate against a user
+	   reporting that mail never arrived. queue.md rule 6. */
+	@OnWorkerEvent("failed")
+	onFailed(job: Job<MailJobData>, error: Error): void {
+		LoggerUtils.error(
+			`Mail job ${job?.id} failed after ${job?.attemptsMade} attempt(s)`,
+			error,
+		);
 	}
 }

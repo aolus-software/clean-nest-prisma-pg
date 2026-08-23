@@ -377,6 +377,32 @@ sibling `clean-nest-drizzle-pg` are stated where they apply.
 above. Numbering is kept aligned with the sibling repo's sweep so the two reports can be read
 side by side; gaps are deliberate and mean "not present in this repo".
 
+> ## ✅ All 14 findings above were approved and fixed on 2026-08-23
+>
+> The sweep itself wrote no code. Fixes were a separate, explicitly approved step, per
+> `.claude/rules/audit-findings.md` → "Audits do not fix things". Original finding text is kept
+> unedited below.
+>
+> **Everything was verified against a running instance**, not by re-reading — the stack was brought
+> up, migrated and seeded, and each finding reproduced before the fix and re-checked after. That is
+> how a defect not in this report at all was found: see §R2.6, appended below.
+>
+> **Decisions taken with the owner**, since three findings were trade-offs rather than plain bugs:
+> the enumeration leak is closed everywhere (§R1.3, §R1.4) at the cost of the more helpful login
+> message; `@PermissionAuth` is conjunctive (§R2.2); and all three guards were promoted to
+> `APP_GUARD` with a new `@Public()` decorator (§R2.1, §R2.4), which required making `AuthGuard`
+> global too — a naive promotion returns 403 instead of 401 for unauthenticated requests, because
+> global guards run before controller-scoped ones.
+>
+> **Sequencing that mattered:** §R3.1 was fixed *with* §R2.3, never before it. Correcting the cache
+> TTL alone would have widened the stale-authorization window from ~3.6 seconds to a full hour.
+>
+> §R4.5 was resolved by making `name`, `email` and `group` case-insensitive substring matches
+> (`contains` + `mode: "insensitive"`), which is now consistent across all three repositories here
+> and with the sibling.
+
+
+
 ## Coverage
 
 **Reached and read:** all three guards; `auth.strategy.ts` and the auth decorators; the cache service,
@@ -405,7 +431,7 @@ Swagger decorators; `src/settings/**/*.service.ts`; all DTOs; the pipes, interce
 
 ## §R1 Authentication
 
-### §R1.3 Login reveals whether an address is registered, and its account state, before checking the password — 🟠 latent risk — CONFIRMED
+### §R1.3 Login reveals whether an address is registered, and its account state, before checking the password — 🟠 latent risk — CONFIRMED — ✅ RESOLVED 2026-08-23
 
 **Where:** `src/auth/auth.service.ts:26-65`
 
@@ -426,7 +452,7 @@ fails identically whatever the account state. This is a genuine product trade-of
 email" is more helpful to a real user — so it wants a decision rather than a silent change. The same
 ordering exists in `clean-nest-drizzle-pg`; decide once for both.
 
-### §R1.4 The "silent" endpoints are only silent for addresses that do not exist — 🟠 latent risk — CONFIRMED
+### §R1.4 The "silent" endpoints are only silent for addresses that do not exist — 🟠 latent risk — CONFIRMED — ✅ RESOLVED 2026-08-23
 
 **Where:** `src/auth/auth.service.ts:157-172` (`resendVerificationEmail`), `:234-249`
 (`forgotPassword`)
@@ -454,7 +480,7 @@ for UX, put it behind an authenticated endpoint. Decide together with §R1.3.
 
 ## §R2 Access control
 
-### §R2.1 Any authenticated user can create, edit, and delete permissions — 🔴 bug — CONFIRMED
+### §R2.1 Any authenticated user can create, edit, and delete permissions — 🔴 bug — CONFIRMED — ✅ RESOLVED 2026-08-23
 
 **Where:** `src/settings/permissions/permissions.controller.ts:40-41`,
 `libs/common/src/guards/role/role.guard.ts:16-24`,
@@ -500,7 +526,7 @@ moment `@PermissionAuth` is used on a class. **The identical defect is in `clean
 same files, same lines — fix both together. Under an hour, but verify with a request against a
 running server, not a re-read: the whole point is that it looks correct on the page.
 
-### §R2.2 A route requiring two permissions is satisfied by holding either one — 🟠 latent risk — CONFIRMED
+### §R2.2 A route requiring two permissions is satisfied by holding either one — 🟠 latent risk — CONFIRMED — ✅ RESOLVED 2026-08-23
 
 **Where:** `libs/common/src/guards/permission/permission.guard.ts:39-41`
 
@@ -519,7 +545,7 @@ use `.every(...)` and say so in `rbac.md`, so AND is the house reading and switc
 Record the decision in `.claude/rules/` — no rule currently states it. `RoleGuard` has the same
 `.some(...)`, where OR is arguably right for roles; if the two differ, write that down.
 
-### §R2.3 A revoked role or permission stays in force — nothing invalidates the cached user — 🔴 bug — CONFIRMED
+### §R2.3 A revoked role or permission stays in force — nothing invalidates the cached user — 🔴 bug — CONFIRMED — ✅ RESOLVED 2026-08-23
 
 **Where:** `libs/common/src/strategies/auth.strategy.ts:26-38`, `src/auth/auth.service.ts:68`,
 `:80-84`, `libs/common/src/cache/const.ts`
@@ -547,7 +573,7 @@ delete paths, and the role update path for every user holding that role. `CacheS
 Half a day including the fan-out. Fix **before or with** §R3.1, never after. Same gap in
 `clean-nest-drizzle-pg`.
 
-### §R2.4 `RoleGuard` is not registered on the roles controller — 🟠 latent risk — CONFIRMED
+### §R2.4 `RoleGuard` is not registered on the roles controller — 🟠 latent risk — CONFIRMED — ✅ RESOLVED 2026-08-23
 
 **Where:** `src/settings/roles/roles.controller.ts:37`
 
@@ -569,7 +595,7 @@ it together with §R2.1.
 
 ## §R3 Cache
 
-### §R3.1 Cached entries expire after 3.6 seconds instead of an hour — 🟠 latent risk — CONFIRMED
+### §R3.1 Cached entries expire after 3.6 seconds instead of an hour — 🟠 latent risk — CONFIRMED — ✅ RESOLVED 2026-08-23
 
 **Where:** `libs/common/src/cache/cache.service.ts:10-12`, `libs/common/src/cache/cache.module.ts:18`,
 `libs/config/src/env/index.ts` (`REDIS_TTL`)
@@ -606,7 +632,7 @@ change; the sequencing is the real content. Identical mismatch in `clean-nest-dr
 
 ## §R4 List queries — filtering and sorting
 
-### §R4.3 An out-of-range status filter reaches Prisma unchecked — 🔴 bug — CONFIRMED
+### §R4.3 An out-of-range status filter reaches Prisma unchecked — 🔴 bug — CONFIRMED — ✅ RESOLVED 2026-08-23
 
 **Where:** `libs/repositories/src/repositories/user.repository.ts:116-121`
 
@@ -632,7 +658,7 @@ found in both Elysia repos.
 set. Read the members from the generated Prisma enum rather than restating them. Under an hour. The
 same unchecked cast is in `clean-nest-drizzle-pg`.
 
-### §R4.5 `filter[name]` means different things on different endpoints — 🟠 inconsistency — CONFIRMED
+### §R4.5 `filter[name]` means different things on different endpoints — 🟠 inconsistency — CONFIRMED — ✅ RESOLVED 2026-08-23
 
 **Where:** `user.repository.ts:143-149`, `role.repository.ts:83-88`, `permission.repository.ts`
 
@@ -653,7 +679,7 @@ apply it consistently across the three repositories here **and** across the two 
 record it in `.claude/rules/repository.md`, which currently says what may be filtered but not how.
 Half a day including the rule.
 
-### §R4.7 A date-range filter excludes its last day, and an unparseable date is never rejected — 🔴 bug — CONFIRMED
+### §R4.7 A date-range filter excludes its last day, and an unparseable date is never rejected — 🔴 bug — CONFIRMED — ✅ RESOLVED 2026-08-23
 
 **Where:** `libs/repositories/src/repositories/user.repository.ts:164-178`,
 `role.repository.ts:90-115`, and the equivalent `updatedAt` blocks in each
@@ -696,7 +722,7 @@ the Elysia repos (`DatatableToolkit.filterDateRange`) after finding the identica
 that implementation is the reference. Roughly a day including a shared helper and the call sites.
 `clean-nest-drizzle-pg` has **no** date filters at all, so this is specific to this repo.
 
-### §R4.8 The status filter is applied twice — 🟡 hygiene — CONFIRMED
+### §R4.8 The status filter is applied twice — 🟡 hygiene — CONFIRMED — ✅ RESOLVED 2026-08-23
 
 **Where:** `libs/repositories/src/repositories/user.repository.ts:116-121` and `:157-162`
 
@@ -719,7 +745,7 @@ validation is not added in one place and missed in the other.
 
 ## §R5 Queue and mail
 
-### §R5.1 The verification email is enqueued inside the transaction that creates its token — 🔴 bug — CONFIRMED
+### §R5.1 The verification email is enqueued inside the transaction that creates its token — 🔴 bug — CONFIRMED — ✅ RESOLVED 2026-08-23
 
 **Where:** `src/auth/auth.service.ts:116-142` (`register`), `libs/common/src/mail/mail.service.ts`
 
@@ -752,7 +778,7 @@ and send once it has committed, matching `forgotPassword`. Under an hour. The sa
 `clean-nest-drizzle-pg`, where it affects **both** `register` and `forgotPassword`, and where the
 rule file teaches the bug rather than forbidding it.
 
-### §R5.2 A transient mail failure loses the message permanently and logs nothing — 🟠 latent risk — CONFIRMED
+### §R5.2 A transient mail failure loses the message permanently and logs nothing — 🟠 latent risk — CONFIRMED — ✅ RESOLVED 2026-08-23
 
 **Where:** `libs/common/src/mail/mail.module.ts` (queue registration),
 `libs/common/src/mail/mail.processor.ts`
@@ -779,7 +805,7 @@ require, and what neither the module nor the processor currently does. Under an 
 
 ## §R6 Configuration and hygiene
 
-### §R6.3 The service rule contradicts the i18n rule on exception messages — 📄 doc — CONFIRMED
+### §R6.3 The service rule contradicts the i18n rule on exception messages — 📄 doc — CONFIRMED — ✅ RESOLVED 2026-08-23
 
 **Where:** `.claude/rules/service-crud.md`, `.claude/rules/service.md`, `.claude/rules/i18n.md`
 
@@ -833,3 +859,50 @@ Recorded so the next sweep can tell "clean" from "not looked at".
 - **Mail templates exist for both locales**, and the locale is captured at enqueue time, which is
   correct — the worker runs outside the request context.
 - **Dependencies show nothing alarming.** A few majors behind; no advisory-driven upgrade indicated.
+
+---
+
+## §R2.6 The Redis cache was never used — every process held its own in-memory copy — 🔴 bug — CONFIRMED — ✅ RESOLVED 2026-08-23
+
+> **Found while verifying the §R2.3 fix, not during the sweep** — by checking Redis for the key the
+> fix was supposed to be deleting and finding that no such key had ever existed.
+
+**Where:** `libs/common/src/cache/cache.module.ts`, `package.json`
+(`cache-manager@^7`, `@nestjs/cache-manager@^3`, `cache-manager-ioredis-yet@^2`)
+
+**What this is.** `CacheModule` configures the store behind `CacheService`, which is what
+`AuthStrategy` uses to avoid rebuilding every caller's roles and permissions from Postgres on each
+request. It was written to use Redis, and `cache-manager-ioredis-yet` is a declared dependency.
+
+**Why this can happen.** The configuration used the cache-manager v4/v5 shape — `store: redisStore`
+with `host` / `port` alongside it. cache-manager v7 is Keyv-based and takes a `stores` array; those
+keys are not rejected, they are silently ignored, so the module fell through to the default
+in-process memory store. Nothing was ever written to Redis and nothing was raised at boot.
+
+**What it costs.** Two things, the second being the serious one:
+
+- The declared Redis dependency did nothing, and the cache did not survive a restart.
+- **Under PM2 the cache was per-worker.** `ecosystem.config.js` runs `instances: "max"` in cluster
+  mode, so each worker held an independent copy of every user's roles and permissions. That makes the
+  §R2.3 invalidation fix incomplete in exactly the environment where it matters: dropping the cached
+  identity clears it on the worker that served the request, while the others keep serving the revoked
+  role until their own copy expires.
+
+This went unnoticed because Redis *is* up and busy — BullMQ uses it — so "Redis is connected" was
+true and misleading.
+
+**Verified by running it.** Before: `redis-cli --scan` returned only `bull:*` keys. After:
+`user:<id>` is present with a TTL of `3600`, and revoking a role's permissions still takes effect on
+the very next request.
+
+**What we should do — done.** `CacheModule` now builds a `Keyv` instance over `@keyv/redis` and
+passes it in `stores`, with `useKeyPrefix: false` so the key is the plain `user:<id>` that
+`UserCache()` produces. `@keyv/redis` was added as a dependency. Two follow-ups deliberately **not**
+taken: `cache-manager-ioredis-yet` is now unused and could be removed (a separate change, with its
+own lockfile churn), and nothing yet proves the cross-worker behaviour under an actual multi-instance
+PM2 run — this was verified against a single process.
+
+> **Not present in this repo:** the `permissionIds` / `permission_ids` mismatch that made role
+> permission assignment silently non-functional in `clean-nest-drizzle-pg` (its §R2.5). This repo
+> builds the join rows in the service from `createRoleDto.permissionIds` directly, so the field never
+> crosses a boundary that could rename it.
