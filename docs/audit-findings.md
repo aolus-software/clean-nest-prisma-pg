@@ -353,3 +353,483 @@ here so the report is self-contained; not re-numbered.
 
 - **`ThrottlerModule` re-exports itself** (`exports: [ThrottlerModule]`) — inert, since the guard is
   global via `APP_GUARD`, but it exports nothing usable. 🟡
+
+---
+
+# Sweep 2 — full code-level read (2026-08-23)
+
+**Sweep date:** 2026-08-23
+**Scope:** the first pass of the end-to-end code read requested as item 4 in the workspace handoff —
+`libs/common` (guards, strategy, decorators, cache, mail), `libs/config` (env validation),
+`libs/repositories` (user / role / permission repositories, seeds), `src/auth` (service), and the
+guard wiring on all three `src/settings` controllers. Item 7 (BullMQ wiring, CI, dependency
+currency) is folded in.
+**Ground truth:** `CLAUDE.md`, `.claude/rules/*.md`, and the running code. Cross-checks against the
+sibling `clean-nest-drizzle-pg` are stated where they apply.
+
+**Severity legend:** 🔴 bug · 🟠 inconsistency / latent risk · 🟡 hygiene · 📄 doc
+**Evidence:** CONFIRMED (traced end to end) · SUSPECT (something unverified, named below)
+
+> **Read-only. Nothing below has been fixed.** Per `.claude/rules/audit-findings.md` → "Audits do not
+> fix things", and per the handoff's instruction that item 4 stays read-only until findings are agreed.
+
+**Section numbers use an `R` prefix** (`§R1`–`§R6`) so they never collide with the `§1`–`§12` sweep
+above. Numbering is kept aligned with the sibling repo's sweep so the two reports can be read
+side by side; gaps are deliberate and mean "not present in this repo".
+
+## Coverage
+
+**Reached and read:** all three guards; `auth.strategy.ts` and the auth decorators; the cache service,
+module, and every call site; the mail service, processor, and module; the envalid schema; the
+`findAll` filter/sort/soft-delete paths of all three repositories; `permission.seed.ts` against every
+guard string in `src/`; `src/auth/auth.service.ts` end to end; the guard wiring on all three settings
+controllers; `bun outdated`.
+
+**Not reached in this pass — do not read these as clean:** the settings controllers' method bodies and
+Swagger decorators; `src/settings/**/*.service.ts`; all DTOs; the pipes, interceptors, and
+`api-response` decorators; `libs/utils/src/{date,string,number,encryption,logger}`;
+`prisma/schema.prisma` and the migrations; `src/health`; `src/app.controller.ts`; the i18n catalogues.
+
+## Top priorities
+
+1. **Any authenticated user can create, edit, and delete permissions** — the superuser gate on that
+   controller is silently inert (§R2.1).
+2. **A revoked role or permission stays in force, and nothing invalidates it** — currently masked by a
+   second bug (§R2.3, §R3.1).
+3. **An out-of-range `filter[status]` reaches Prisma unchecked** (§R4.3).
+4. **A date-range filter silently excludes its final day, and an unparseable date is not rejected**
+   (§R4.7).
+5. **The verification email is enqueued inside the transaction that creates its token** (§R5.1).
+
+---
+
+## §R1 Authentication
+
+### §R1.3 Login reveals whether an address is registered, and its account state, before checking the password — 🟠 latent risk — CONFIRMED
+
+**Where:** `src/auth/auth.service.ts:26-65`
+
+**What this is.** `login` looks the user up by email and runs three checks — email verified, status
+active, password correct — throwing a distinct message for each.
+
+**Why this can happen.** The verification and status checks sit above the password comparison, so
+they are reachable with any password. An unknown address returns `invalid_credentials`; a
+known-but-unverified one returns `verify_email_required`; a suspended one returns `account_inactive`.
+
+**What it costs.** An unauthenticated caller can enumerate which addresses hold accounts, and learn
+each one's verification and activation state, one junk-password request at a time. That turns a
+mailing list into a target list for credential stuffing and for phishing that cites the victim's real
+account state.
+
+**What we should do.** Move the password comparison above the other two checks, so a wrong password
+fails identically whatever the account state. This is a genuine product trade-off — "verify your
+email" is more helpful to a real user — so it wants a decision rather than a silent change. The same
+ordering exists in `clean-nest-drizzle-pg`; decide once for both.
+
+### §R1.4 The "silent" endpoints are only silent for addresses that do not exist — 🟠 latent risk — CONFIRMED
+
+**Where:** `src/auth/auth.service.ts:157-172` (`resendVerificationEmail`), `:234-249`
+(`forgotPassword`)
+
+**What this is.** Both return early with no error when the address is unknown — the standard defence
+against account enumeration.
+
+**Why this can happen.** The silence stops one line later: `resendVerificationEmail` throws when the
+address exists and *is* verified, `forgotPassword` throws when it exists and is *not*. Between them a
+caller learns both existence and verification state.
+
+**What it costs.** The enumeration defence does not hold on the two endpoints written to provide it.
+A 200 with an empty body means "no such account"; a 422 means "account exists", and which 422 tells
+you its state.
+
+**What we should do.** Return silently in both branches. If the "already verified" feedback is wanted
+for UX, put it behind an authenticated endpoint. Decide together with §R1.3.
+
+> **Not present in this repo:** the inverted token predicate that breaks email verification and
+> password reset in `clean-nest-drizzle-pg` (its §R1.1 and §R1.2). This repo queries the token by
+> value alone and checks `usedAt` in code — `auth.service.ts:184-198`, `:272-291`, `:295-320` — which
+> is the correct shape and the reference the sibling should be fixed against.
+
+---
+
+## §R2 Access control
+
+### §R2.1 Any authenticated user can create, edit, and delete permissions — 🔴 bug — CONFIRMED
+
+**Where:** `src/settings/permissions/permissions.controller.ts:40-41`,
+`libs/common/src/guards/role/role.guard.ts:16-24`,
+`libs/common/src/decorators/role-auth/role-auth.decorator.ts`
+
+**What this is.** RBAC is decorator-driven: `@UseGuards(AuthGuard, RoleGuard)` attaches the guards and
+`@RoleAuth("superuser")` declares the required role, which `RoleGuard` reads back through NestJS's
+`Reflector`. `PermissionsController` is gated this way and only this way — unlike the users and roles
+controllers, none of its five methods carries a per-method permission.
+
+**Why this can happen.** `@RoleAuth("superuser")` is applied at **class** level, but the guard only
+inspects the handler:
+
+```ts
+const requiredRoles = this.reflector.get<string[]>("roles", context.getHandler());
+if (!requiredRoles) {
+    return true;                                  // every method takes this branch
+}
+```
+
+`SetMetadata` on a class stores metadata on the class; `reflector.get(key, context.getHandler())`
+never consults it. So `requiredRoles` is `undefined` on all five handlers and the guard returns
+`true` before checking anything. The decorator is present, the guard is registered, `/docs` shows the
+lock — and nothing is enforced.
+
+**What it costs.** Every `/settings/permissions` route is protected by authentication alone. A
+self-registered user can **delete the permission catalogue**, which revokes authorization for every
+non-superuser in the system; or **rename a permission**, which is the escalation path — a caller
+holding any permission through a role can rename that row to a more powerful name, and because the
+role link is by row id, `PermissionGuard` then honours the new name for them.
+
+**What we should do.** Read both targets, the standard NestJS idiom:
+
+```ts
+const requiredRoles = this.reflector.getAllAndOverride<string[]>("roles", [
+    context.getHandler(),
+    context.getClass(),
+]);
+```
+
+Apply the same to `PermissionGuard`, which has the identical read and would fail identically the
+moment `@PermissionAuth` is used on a class. **The identical defect is in `clean-nest-drizzle-pg`**,
+same files, same lines — fix both together. Under an hour, but verify with a request against a
+running server, not a re-read: the whole point is that it looks correct on the page.
+
+### §R2.2 A route requiring two permissions is satisfied by holding either one — 🟠 latent risk — CONFIRMED
+
+**Where:** `libs/common/src/guards/permission/permission.guard.ts:39-41`
+
+**What this is.** `@PermissionAuth(...)` is variadic, so a route can name several permissions; the
+natural reading of two is that both are required.
+
+**Why this can happen.** The guard uses `.some(...)` — OR, not AND. Every route today names exactly
+one permission, so nothing is currently mis-gated. It becomes live the first time someone writes
+`@PermissionAuth("user:update", "role:update")` expecting a conjunction.
+
+**What it costs.** Nothing today. Thereafter, such a route is gated at its *least* restrictive
+permission, with no error and no log.
+
+**What we should do.** Decide the semantics and make code and decorator agree. Both Elysia siblings
+use `.every(...)` and say so in `rbac.md`, so AND is the house reading and switching breaks nothing.
+Record the decision in `.claude/rules/` — no rule currently states it. `RoleGuard` has the same
+`.some(...)`, where OR is arguably right for roles; if the two differ, write that down.
+
+### §R2.3 A revoked role or permission stays in force — nothing invalidates the cached user — 🔴 bug — CONFIRMED
+
+**Where:** `libs/common/src/strategies/auth.strategy.ts:26-38`, `src/auth/auth.service.ts:68`,
+`:80-84`, `libs/common/src/cache/const.ts`
+
+**What this is.** On every authenticated request `AuthStrategy.validate` resolves the caller's roles
+and flattened permissions, and both guards decide from that object. It is cached in Redis under
+`user:<id>`, read first and rebuilt from the database only on a miss.
+
+**Why this can happen.** `user:<id>` is written in two places and deleted in one, all three inside
+`login`. Grepping the tree for `UserCache(` returns four call sites and none is in `src/settings/`.
+So changing a user's roles through the users controller, or a role's permissions through the roles
+controller, leaves the cached authorization data untouched.
+
+**What it costs.** Revoking access does not revoke access. A user whose role is removed keeps every
+permission it carried until the cache entry expires — and logging out does not clear it either. For
+an operator responding to a compromised or departing account, "I removed their role" is not true when
+they believe it is.
+
+**The window is currently small, and only by accident.** §R3.1 means entries expire after roughly 3.6
+seconds rather than the intended hour. **Fixing §R3.1 alone widens this from seconds to an hour.**
+
+**What we should do.** Delete the entry wherever authorization data changes — the user update and
+delete paths, and the role update path for every user holding that role. `CacheService.del` and
+`UserCache(userId)` already exist; the role case needs the affected user ids from `UserRepository`.
+Half a day including the fan-out. Fix **before or with** §R3.1, never after. Same gap in
+`clean-nest-drizzle-pg`.
+
+### §R2.4 `RoleGuard` is not registered on the roles controller — 🟠 latent risk — CONFIRMED
+
+**Where:** `src/settings/roles/roles.controller.ts:37`
+
+**What this is.** A guard runs only if listed in `@UseGuards`. `UsersController` registers all three,
+which is why its method-level `@RoleAuth("superuser")` at `:261` works.
+
+**Why this can happen.** `RolesController` registers only `AuthGuard, PermissionGuard`. Adding
+`@RoleAuth` to a method there would compile, read correctly, pass review — and do nothing.
+
+**What it costs.** Nothing today. It is a loaded footgun of the same family as §R2.1: an auth
+decorator that is present and inert.
+
+**What we should do.** Register all three guards on every settings controller, or promote both to
+`APP_GUARD` alongside `ThrottlerGuard` — they already no-op when their metadata is absent, so global
+registration is safe and removes the class of mistake. The latter is the more durable fix; consider
+it together with §R2.1.
+
+---
+
+## §R3 Cache
+
+### §R3.1 Cached entries expire after 3.6 seconds instead of an hour — 🟠 latent risk — CONFIRMED
+
+**Where:** `libs/common/src/cache/cache.service.ts:10-12`, `libs/common/src/cache/cache.module.ts:18`,
+`libs/config/src/env/index.ts` (`REDIS_TTL`)
+
+**What this is.** `REDIS_TTL` is an envalid-validated number defaulting to `3600`; its name and
+default both say seconds. The module registers a store-wide default TTL; `CacheService.set` passes a
+per-key TTL on each write.
+
+**Why this can happen.** The two disagree about units. The module multiplies —
+`ttl: env.REDIS_TTL * 1000` — and the service does not:
+
+```ts
+const ttlValue = ttl ? ttl : getEnv().REDIS_TTL;
+await this._cacheManager.set(key, value, ttlValue);
+```
+
+`cache-manager` v7, which `@nestjs/cache-manager` v3 wraps, takes milliseconds — the module's own
+`* 1000` is the evidence. Since `AuthStrategy` always passes `null`, every cached user gets 3.6
+seconds. A smaller edge in the same line: `ttl ? ttl : ...` treats an explicit `0` as "not supplied".
+
+**What it costs.** The user cache does almost nothing — past the first seconds of a session,
+practically every authenticated request rebuilds the user's roles and permissions from Postgres, a
+multi-table join on the hot path of every request.
+
+**The interaction is the important part.** This is what limits §R2.3's stale-permission window to a
+few seconds. Correcting the units in isolation — a one-token change that looks purely like a
+performance fix — silently converts a 3.6-second authorization staleness window into a one-hour one.
+
+**What we should do.** Multiply in the service to match the module, and use `??` so `0` means what it
+says. **Do not ship without §R2.3's invalidation**, and say so in the commit message. Minutes for the
+change; the sequencing is the real content. Identical mismatch in `clean-nest-drizzle-pg`.
+
+---
+
+## §R4 List queries — filtering and sorting
+
+### §R4.3 An out-of-range status filter reaches Prisma unchecked — 🔴 bug — CONFIRMED
+
+**Where:** `libs/repositories/src/repositories/user.repository.ts:116-121`
+
+**What this is.** `status` is a Prisma enum (`UserStatus`), and `filter[status]` is allow-listed by
+**key** — the repository confirms `status` is filterable before building the `where`.
+
+**Why this can happen.** The key is checked; the **value** is not. It is cast straight through:
+
+```ts
+status: queryParam.filter["status"] as UserStatus,
+```
+
+`as` is a compile-time assertion with no runtime effect, so any string reaches Prisma as an enum
+value. Prisma rejects it with a `PrismaClientValidationError`.
+
+**What it costs.** `GET /settings/users?filter[status]=BOGUS` produces a 500 rather than the 400 the
+allow-list machinery exists to produce. A client typo looks like a server fault, it is noise in error
+monitoring, and it is a cheap way for any authenticated caller to generate 500s. Same defect Tier 8
+found in both Elysia repos.
+
+**What we should do.** Validate the value against `Object.values(UserStatus)` before building the
+`where` and throw the same translated `BadRequestException` the key check throws, naming the allowed
+set. Read the members from the generated Prisma enum rather than restating them. Under an hour. The
+same unchecked cast is in `clean-nest-drizzle-pg`.
+
+### §R4.5 `filter[name]` means different things on different endpoints — 🟠 inconsistency — CONFIRMED
+
+**Where:** `user.repository.ts:143-149`, `role.repository.ts:83-88`, `permission.repository.ts`
+
+**What this is.** All three list endpoints advertise a `name` filter through the same
+`@ApiDatatableQueries` machinery, and `/docs` presents them identically.
+
+**Why this can happen.** Each repository implements it as exact equality —
+`name: queryParam.filter["name"].toString()` — with no `contains` mode. The sibling
+`clean-nest-drizzle-pg` implements the user one as a substring match (`ilike '%x%'`), so the same
+documented parameter behaves differently across the two templates as well as being unstated here.
+
+**What it costs.** A client that expects `filter[name]=jane` to find "Jane Doe" gets an empty page.
+Nothing in the response or the docs indicates that exact match was required, and the search box a UI
+would naturally wire to this parameter appears broken.
+
+**What we should do.** Pick one semantics — substring is the usual expectation for a name filter —
+apply it consistently across the three repositories here **and** across the two Nest templates, and
+record it in `.claude/rules/repository.md`, which currently says what may be filtered but not how.
+Half a day including the rule.
+
+### §R4.7 A date-range filter excludes its last day, and an unparseable date is never rejected — 🔴 bug — CONFIRMED
+
+**Where:** `libs/repositories/src/repositories/user.repository.ts:164-178`,
+`role.repository.ts:90-115`, and the equivalent `updatedAt` blocks in each
+
+**What this is.** The list endpoints accept `filter[createdAt]` and `filter[updatedAt]` as a
+comma-separated range — `filter[createdAt]=2024-01-01,2024-12-31` — split into a `gte` / `lte` pair.
+
+**Why this can happen.** Three problems in one block:
+
+```ts
+const [startDate, endDate] = queryParam.filter["createdAt"].split(",");
+filterCondition = {
+    ...filterCondition,
+    createdAt: {
+        gte: DateUtils.parse(startDate).toDate(),
+        ...(endDate && { lte: DateUtils.parse(endDate).toDate() }),
+    },
+};
+```
+
+1. **The end of the range is midnight.** `createdAt` is a timestamp, and `DateUtils.parse("2024-12-31")`
+   yields `2024-12-31T00:00:00`. `lte` against that excludes everything recorded during 31 December
+   except the first instant. An inclusive-looking range silently drops its final day.
+2. **Nothing validates the dates.** `DateUtils.parse("banana")` produces an invalid date, `.toDate()`
+   yields `Invalid Date`, and that reaches Prisma. A reversed range (`end,start`) is accepted and
+   quietly matches nothing. More than two comma-separated parts are silently truncated to the first
+   two.
+3. **The timezone is the host's**, not the application's. A bare `YYYY-MM-DD` is read as wall-clock
+   time wherever the process runs, so on a non-UTC host the window lands on the wrong calendar day.
+
+**What it costs.** A report filtered to a month is missing the last day of it, with a 200 and no
+indication anything was dropped — the kind of error that is found by someone reconciling totals, long
+after the fact. A malformed date produces a 500 rather than a 400. And the same query returns
+different rows depending on the server's timezone.
+
+**What we should do.** Parse the range through one shared helper that validates both ends, rejects a
+reversed or over-long range with a translated `BadRequestException`, snaps the end to end-of-day, and
+resolves bare dates in the application timezone rather than the host's. Tier 9 built exactly this for
+the Elysia repos (`DatatableToolkit.filterDateRange`) after finding the identical three problems —
+that implementation is the reference. Roughly a day including a shared helper and the call sites.
+`clean-nest-drizzle-pg` has **no** date filters at all, so this is specific to this repo.
+
+### §R4.8 The status filter is applied twice — 🟡 hygiene — CONFIRMED
+
+**Where:** `libs/repositories/src/repositories/user.repository.ts:116-121` and `:157-162`
+
+**What this is.** The `findAll` filter block builds a Prisma `where` object by spreading each
+condition onto an accumulator.
+
+**Why this can happen.** The `if (queryParam.filter["status"])` block appears twice in the same
+function, forty lines apart, with identical bodies. The second spread overwrites the first with the
+same value.
+
+**What it costs.** Nothing behavioural — the result is identical. It is listed because it is a
+copy-paste artefact sitting in the middle of the block where §R4.3's unchecked cast lives, so anyone
+fixing that has to notice there are two sites, not one. The same duplication was found and removed in
+`clean-elysia-prisma` in Tier 8.
+
+**What we should do.** Delete the second block. Minutes. Do it as part of the §R4.3 fix so the
+validation is not added in one place and missed in the other.
+
+---
+
+## §R5 Queue and mail
+
+### §R5.1 The verification email is enqueued inside the transaction that creates its token — 🔴 bug — CONFIRMED
+
+**Where:** `src/auth/auth.service.ts:116-142` (`register`), `libs/common/src/mail/mail.service.ts`
+
+**What this is.** Registration writes the user row and a verification-token row in one Prisma
+transaction, then sends the mail. Mail is asynchronous: `MailService.sendMail` pushes a job onto the
+`mail-queue` BullMQ queue in Redis, and a separate processor sends it.
+
+**Why this can happen.** The enqueue sits **inside** the `prisma.$transaction` callback, after the
+`emailVerification.create`. Redis and Postgres share no transaction, so the job is visible to the
+worker the instant it is added — before the transaction commits. Two failure modes follow:
+
+1. **The race.** The worker sends the mail and the user clicks the link before the commit lands.
+   `verifyEmail` finds no such token and reports an invalid one, for a link issued seconds earlier.
+2. **The rollback.** If anything after the enqueue fails, Postgres rolls back and the user row never
+   exists — but the job is already in Redis and the mail goes out, carrying a verification link for
+   an account that was never created.
+
+**What it costs.** Intermittent, unreproducible "invalid token" reports on freshly issued links, and
+verification mail for non-existent accounts. Both look like user error and are near-impossible to
+diagnose from a support ticket. The window widens exactly when the database is slow — when it matters
+most.
+
+**This repo's own rules already forbid it**, which makes the fix uncontroversial:
+`.claude/rules/queue.md` rule 11 says "Do not enqueue inside a Prisma transaction. If the transaction
+rolls back the job stays in Redis." `register` is the one place that does. Note `forgotPassword`
+(`:249-265`) correctly enqueues **outside** its write, so the correct shape is already in the file.
+
+**What we should do.** Move the enqueue after the transaction — return the token from the callback
+and send once it has committed, matching `forgotPassword`. Under an hour. The same pattern is in
+`clean-nest-drizzle-pg`, where it affects **both** `register` and `forgotPassword`, and where the
+rule file teaches the bug rather than forbidding it.
+
+### §R5.2 A transient mail failure loses the message permanently and logs nothing — 🟠 latent risk — CONFIRMED
+
+**Where:** `libs/common/src/mail/mail.module.ts` (queue registration),
+`libs/common/src/mail/mail.processor.ts`
+
+**What this is.** `BullModule.registerQueue` configures the queue; the processor sends each job
+through nodemailer and logs a line naming the recipients.
+
+**Why this can happen.** The queue is registered with a `connection` and nothing else — no
+`defaultJobOptions`, so no `attempts` and no `backoff`, and BullMQ's default is a single attempt. And
+there is no `@OnWorkerEvent("failed")` handler, so a failed job moves to the failed set silently.
+
+**What it costs.** An SMTP hiccup, a provider rate limit, or a brief network fault permanently drops a
+verification or password-reset email, with no retry and nothing in the logs. The user sees a
+registration that appears to succeed and mail that never arrives; the operator has nothing to
+correlate.
+
+**What we should do.** Add `defaultJobOptions: { attempts: 3, backoff: { type: "exponential", delay:
+2000 } }` and an `@OnWorkerEvent("failed")` handler logging through `LoggerUtils.error` with the job
+id and recipient — which is what this repo's own `.claude/rules/queue.md` rules 5, 6, and 10 already
+require, and what neither the module nor the processor currently does. Under an hour. Same gap in
+`clean-nest-drizzle-pg`, which has no queue rule at all.
+
+---
+
+## §R6 Configuration and hygiene
+
+### §R6.3 The service rule contradicts the i18n rule on exception messages — 📄 doc — CONFIRMED
+
+**Where:** `.claude/rules/service-crud.md`, `.claude/rules/service.md`, `.claude/rules/i18n.md`
+
+**What this is.** Two rule files describe how a service reports a missing entity, and they disagree.
+
+**Why this can happen.** `i18n.md` shows the compliant form and states the principle — "Never
+hardcode an English literal in a controller, service, DTO, or repository" — while `service-crud.md`
+and `service.md` both present a bare English template literal as the canonical shape, and
+`service.md` specifies the format as a requirement in its exception table.
+
+**What it costs.** Someone following `service-crud.md`, the file named for exactly this task, writes
+untranslated exceptions and is compliant with the rule they read. The contradiction is invisible
+unless both files are open. This is the class of defect the workspace's item 8b exists to find,
+caught here incidentally.
+
+**What we should do.** Rewrite the examples in both files to use `this.i18n.t(...)` and link to
+`i18n.md` as the authority on message strings. Then check the settings services against it — those
+were not read in this pass, so whether the code follows the wrong rule is currently unknown. Under an
+hour for the rules; the code check belongs to the next pass. The identical contradiction is in
+`clean-nest-drizzle-pg`'s rule set.
+
+> **Not present in this repo:** the dead `|| "default-secret"` JWT fallbacks (the sibling's §R6.1) —
+> this repo reads `getEnv().JWT_SECRET` directly in both `jwt.utils.ts` and `auth.strategy.ts`, which
+> is correct and is the reference for fixing the sibling. Nor the hardcoded English message in
+> `forgotPassword` (§R6.2): this repo uses `message.auth.verify_email_required` there.
+
+---
+
+## Verified correct — checked, nothing found
+
+Recorded so the next sweep can tell "clean" from "not looked at".
+
+- **Token single use is enforced correctly.** `verifyEmail`, `isResetPasswordTokenValid`, and
+  `resetPassword` each query by token value and reject a row whose `usedAt` is set, then stamp it in
+  the same transaction as the write it authorises. The sibling repo has this inverted; this repo is
+  the reference.
+- **Soft delete on users is complete.** All four read paths in `user.repository.ts` filter
+  `deletedAt: null`, including `userInformation`, which `AuthStrategy` resolves the caller
+  through — so a deleted user cannot authenticate.
+- **Every guard string exists in the seed.** All ten `@PermissionAuth` values in `src/` are produced
+  by `permission.seed.ts`'s cross product of `["user","role","permission"]` and
+  `["list","create","view","update","delete","restore"]`. No guard fails closed.
+- **Filter conditions compose correctly.** Each block spreads onto the accumulator
+  (`{ ...filterCondition, x }`), so two filters combine. The sibling `clean-nest-drizzle-pg` has a
+  real bug here; this repo does not.
+- **An unrecognised sort field, sort direction, or filter key is rejected** with a translated
+  `BadRequestException` rather than coerced, and the allow-lists are exported and passed to
+  `@ApiDatatableQueries`, so `/docs` shows what is enforced.
+- **`/docs` is fail-closed** — `API_DOCS_ENABLED` defaults to `false` with no `NODE_ENV` term.
+- **Rate limiting is genuinely global** — `ThrottlerGuard` registered as an `APP_GUARD`.
+- **Mail templates exist for both locales**, and the locale is captured at enqueue time, which is
+  correct — the worker runs outside the request context.
+- **Dependencies show nothing alarming.** A few majors behind; no advisory-driven upgrade indicated.
