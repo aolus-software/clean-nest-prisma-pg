@@ -1,4 +1,8 @@
-import { DatatableType, PaginationResponse } from "@common";
+import {
+	DatatableType,
+	PaginationResponse,
+	parseDateRangeFilter,
+} from "@common";
 import { BadRequestException } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@repositories";
@@ -90,6 +94,39 @@ export function PermissionRepository(tx?: Prisma.TransactionClient) {
 							contains: queryParam.filter["name"].toString(),
 							mode: "insensitive",
 						},
+					};
+				}
+
+				if (queryParam.filter["id"]) {
+					filterCondition = {
+						...filterCondition,
+						id: queryParam.filter["id"].toString(),
+					};
+				}
+
+				if (
+					queryParam.filter["createdAt"] &&
+					typeof queryParam.filter["createdAt"] === "string"
+				) {
+					filterCondition = {
+						...filterCondition,
+						createdAt: parseDateRangeFilter(
+							queryParam.filter["createdAt"],
+							"createdAt",
+						),
+					};
+				}
+
+				if (
+					queryParam.filter["updatedAt"] &&
+					typeof queryParam.filter["updatedAt"] === "string"
+				) {
+					filterCondition = {
+						...filterCondition,
+						updatedAt: parseDateRangeFilter(
+							queryParam.filter["updatedAt"],
+							"updatedAt",
+						),
 					};
 				}
 

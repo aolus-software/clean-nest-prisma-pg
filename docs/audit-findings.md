@@ -942,7 +942,7 @@ relationship to the permission vocabulary.
 spot-check, `libs/utils/src/{date,string,number,logger}` (~750 lines of helpers), `prisma/schema.prisma`
 and the migrations, and the `api-response` / `api-datatable-queries` decorators.
 
-## §P1 A permission created through the API can never satisfy a guard — 🔴 bug — CONFIRMED
+## §P1 A permission created through the API can never satisfy a guard — 🔴 bug — CONFIRMED — ✅ RESOLVED 2026-08-23
 
 **Where:** `src/settings/permissions/permissions.service.ts:17`,
 `prisma/seed/permission.seed.ts:9` (the convention)
@@ -975,7 +975,7 @@ field so it says what it holds — `names` are *actions*, not full permission na
 ambiguity that allowed the inversion. Under an hour; decide whether to migrate any API-created rows
 first. **The sibling `clean-nest-drizzle-pg` has the identical inversion**, in two places.
 
-## §P2 One `sendMail` is still enqueued inside its transaction — 🟠 latent risk — CONFIRMED
+## §P2 One `sendMail` is still enqueued inside its transaction — 🟠 latent risk — CONFIRMED — ✅ RESOLVED 2026-08-23
 
 **Where:** `src/settings/users/users.service.ts:57` (inside the `prisma.$transaction` opened at `:41`)
 
@@ -1033,17 +1033,22 @@ selection, and the "what does a miss return" convention are decided in two place
 **What we should do.** Add the missing lookups to their repositories and call those. Under an hour.
 Worth doing when §P1 is fixed, since it touches the same permissions service.
 
-## §P5 A DTO imports the schema by relative path, bypassing the alias — 🟡 hygiene — CONFIRMED
+## §P5 A DTO imports the schema by relative path, bypassing the alias — 🟡 hygiene — ❌ REFUTED 2026-08-23
+
+> **Refuted.** This was filed against both repos on the strength of the sibling's code, without
+> checking this one. `src/settings/users/dto/create-user.dto.ts` here imports
+> `UserStatus` from `@prisma/client` — a package import, not a relative climb — and there is no
+> `../../../../libs/...` path anywhere in the DTO folder. The finding is real in
+> `clean-nest-drizzle-pg` and was fixed there; it never applied here.
+>
+> Recorded rather than deleted, per `.claude/rules/audit-findings.md`: a finding that turns out to be
+> wrong is marked refuted so the next reader knows it was checked, not missed. The lesson is the
+> obvious one — a defect confirmed in one sibling is a *hypothesis* about the other, never a finding.
 
 **Where:** `src/settings/users/dto/create-user.dto.ts` (the enum import)
 
-**What this is.** `imports-and-naming.md` and `shared-code.md` both require the alias for cross-layer
-imports and explicitly forbid `../../libs/...`.
-
-**What it costs.** It breaks the moment the file moves, and it bypasses the barrel — so a symbol
-deliberately *not* re-exported can still be imported, which is what the barrel exists to control.
-
-**What we should do.** Import through the alias. One line.
+**What was claimed.** That the DTO reached across into `libs/` by relative path, against
+`imports-and-naming.md` and `shared-code.md`.
 
 ## §P10 Suspending an account produces a misleading error, and the check is implicit — 🟠 latent risk — CONFIRMED
 
@@ -1175,7 +1180,7 @@ bypassed. That claim is how this survived review.
 all, because it returns a literal rather than going through `ResponseHandler`. Defensible for a probe
 that orchestrators parse, but it should be a decision rather than an accident.
 
-## §P12 Three permission filters are accepted and then ignored — 🟠 latent risk — CONFIRMED
+## §P12 Three permission filters are accepted and then ignored — 🟠 latent risk — CONFIRMED — ✅ RESOLVED 2026-08-23
 
 > Found while writing `docs/API_DOCUMENTATION.md` (item 12b), by listing each endpoint's allow-listed
 > filter keys and checking that the repository implements a `where` branch for every one.
@@ -1262,7 +1267,7 @@ offset-less input outright would close it for good and is worth considering.
 > its comment claimed the opposite — that dates resolved in `APP_TIMEZONE`. The claim was propagated
 > into `docs/API_DOCUMENTATION.md` before being tested. Both are now corrected, and the claim is true.
 
-## §P14 Stack traces and debug logs are suppressed in the one environment that needs them — 🟠 inconsistency — CONFIRMED
+## §P14 Stack traces and debug logs are suppressed in the one environment that needs them — 🟠 inconsistency — CONFIRMED — ✅ RESOLVED 2026-08-23
 
 **Where:** `libs/utils/src/logger/logger.utils.ts:6`, `ecosystem.config.js`,
 `libs/config/src/env/index.ts` (the `NODE_ENV` choices)

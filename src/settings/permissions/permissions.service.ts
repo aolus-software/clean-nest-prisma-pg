@@ -13,8 +13,8 @@ export class PermissionsService {
 	async create(createPermissionDto: CreatePermissionDto): Promise<void> {
 		await prisma.$transaction(async (tx) => {
 			const permissionData: Prisma.PermissionCreateInput[] =
-				createPermissionDto.names.map((action) => ({
-					name: `${action}:${createPermissionDto.group}`,
+				createPermissionDto.actions.map((action) => ({
+					name: `${createPermissionDto.group}:${action}`,
 					group: createPermissionDto.group,
 				}));
 
@@ -56,7 +56,7 @@ export class PermissionsService {
 				);
 			}
 
-			const updatedName = `${updatePermissionDto.name}:${updatePermissionDto.group}`;
+			const updatedName = `${updatePermissionDto.group}:${updatePermissionDto.action}`;
 			await tx.permission.update({
 				where: { id },
 				data: {

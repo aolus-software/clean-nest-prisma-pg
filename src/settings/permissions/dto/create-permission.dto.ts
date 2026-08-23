@@ -9,17 +9,20 @@ export class CreatePermissionDto {
 		message: i18nValidationMessage("validation.IS_STRING"),
 	})
 	@ApiProperty({
-		description: "Array of permission names",
-		example: ["create_user", "delete_user", "update_user"],
+		description:
+			"The actions to create in this group. Each becomes a permission " +
+			"named `<group>:<action>` — the form every @PermissionAuth string " +
+			"uses and the form the seeder produces.",
+		example: ["list", "create", "view", "update", "delete"],
 		type: [String],
 	})
-	names: string[];
+	actions: string[];
 
 	@IsString({ message: i18nValidationMessage("validation.IS_STRING") })
 	@IsNotEmpty({ message: i18nValidationMessage("validation.NOT_EMPTY") })
 	@ApiProperty({
-		description: "Permission group",
-		example: "user_management",
+		description: "The resource this group of actions applies to, singular.",
+		example: "user",
 	})
 	group: string;
 }

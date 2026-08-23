@@ -101,13 +101,7 @@ Sortable and filterable fields per endpoint:
 | -------- | -------- | ---------- |
 | `/settings/users` | `id`, `name`, `email`, `status`, `createdAt`, `updatedAt` | `name`, `email`, `status` (enum), `roles`, `createdAt`, `updatedAt` |
 | `/settings/roles` | `id`, `name`, `createdAt`, `updatedAt` | `name`, `createdAt`, `updatedAt` |
-| `/settings/permissions` | `id`, `name`, `group`, `createdAt`, `updatedAt` | `name`, `group` — see the note below |
-
-> **`/settings/permissions` accepts three filter keys it does not implement.** `id`, `createdAt` and
-> `updatedAt` are in that endpoint's allow-list, so they pass validation, but the repository has no
-> matching `where` branch — the request returns a 200 and an **unfiltered** page that looks filtered.
-> Only `name` and `group` actually narrow the result. Recorded as §P12 in
-> [audit-findings.md](./audit-findings.md); until it is fixed, do not rely on those three.
+| `/settings/permissions` | `id`, `name`, `group`, `createdAt`, `updatedAt` | `id`, `name`, `group`, `createdAt`, `updatedAt` |
 
 Notes on filter semantics:
 
@@ -161,6 +155,18 @@ GET    /settings/permissions/:id              role: superuser
 PATCH  /settings/permissions/:id              role: superuser
 DELETE /settings/permissions/:id              role: superuser
 ```
+
+**Creating permissions.** `POST /settings/permissions` takes a group and a list of **actions**, and
+stores each as `<group>:<action>`:
+
+```jsonc
+{ "group": "report", "actions": ["export", "archive"] }
+// -> creates report:export and report:archive
+```
+
+The body field is `actions`, not `names` — they are action names, not full permission names, and the
+composition happens server-side. `PATCH /settings/permissions/:id` takes `{ group, action }` for the
+same reason. A name that already exists is a 422 naming each collision, not a 500.
 
 Permission strings are `entity:action` with a singular entity. The seeded catalogue is the cross
 product of `user`, `role`, `permission` and `list`, `create`, `view`, `update`, `delete`, `restore` —

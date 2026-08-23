@@ -12,6 +12,7 @@ import { UpdatePasswordDto } from "./dto/update-password.dto";
 import { UpdateStatusDto } from "./dto/update-status.dto";
 import { getEnv } from "@config";
 import { I18nService } from "nestjs-i18n";
+import { emailVerificationLifetime } from "@utils/default/token-lifetime";
 import { CacheService, UserCache } from "@common";
 
 @Injectable()
@@ -34,7 +35,7 @@ export class UsersService {
 		}
 
 		const password = await HashUtils.generateHash(createUserDto.password);
-		await prisma.$transaction(async (tx) => {
+		const token = await prisma.$transaction(async (tx) => {
 			const user = await tx.user.create({
 				data: {
 					email: createUserDto.email,
@@ -44,25 +45,30 @@ export class UsersService {
 				},
 			});
 
-			const token = StrUtils.random(255);
+			const verificationToken = StrUtils.random(255);
 			await tx.emailVerification.create({
 				data: {
 					userId: user.id,
-					token,
-					expiresAt: DateUtils.addHours(DateUtils.now(), 2).toDate(),
+					token: verificationToken,
+					expiresAt: emailVerificationLifetime(),
 				},
 			});
 
-			// Send verification email
-			await this.mailService.sendMail({
-				subject: this.i18n.t("email.verify_email.subject"),
-				to: createUserDto.email,
-				template: "auth/verify-email",
-				context: {
-					name: createUserDto.name,
-					verifyUrl: `${getEnv().FRONTEND_URL}/verify-email?token=${token}`,
-				},
-			});
+			return verificationToken;
+		});
+
+		/* Enqueued only after the transaction commits — Redis and Postgres share
+		   no transaction, so enqueuing inside the callback lets the worker send a
+		   link whose token row is not committed yet, or send one at all for a
+		   create that rolled back. queue.md rule 11. */
+		await this.mailService.sendMail({
+			subject: this.i18n.t("email.verify_email.subject"),
+			to: createUserDto.email,
+			template: "auth/verify-email",
+			context: {
+				name: createUserDto.name,
+				verifyUrl: `${getEnv().FRONTEND_URL}/verify-email?token=${token}`,
+			},
 		});
 	}
 

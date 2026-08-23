@@ -3,7 +3,25 @@ import { DateUtils } from "../date/date.utils";
 import { getEnv } from "@config";
 
 export class LoggerUtils {
-	private static isDevelopment = getEnv().NODE_ENV === "development";
+	/* Both "development" and "dev" count. ecosystem.config.js sets the deployed
+	   development app's NODE_ENV to "dev", so testing only "development" left
+	   that environment with no stack traces and no debug output — silently, and
+	   in the one place they are most wanted. */
+	private static isDevelopment = ["development", "dev"].includes(
+		getEnv().NODE_ENV,
+	);
+
+	/* JSON.stringify throws on a circular structure, and database driver errors
+	   routinely carry one. Since this runs inside the 500 handler, letting it
+	   throw would turn a handled error into an unhandled one with nothing
+	   logged at all. */
+	private static safeStringify(value: unknown): string {
+		try {
+			return JSON.stringify(value, null, 2) ?? String(value);
+		} catch {
+			return "[unserialisable]";
+		}
+	}
 	private static logger = new Logger("LoggerUtils");
 
 	static error(
@@ -18,7 +36,7 @@ export class LoggerUtils {
 		let errorMessage = `\n${separator}\n[ERROR] ${timestamp}\nMessage: ${message}`;
 
 		if (context) {
-			errorMessage += `\nContext: ${JSON.stringify(context, null, 2)}`;
+			errorMessage += `\nContext: ${this.safeStringify(context)}`;
 		}
 
 		if (error) {
@@ -29,7 +47,7 @@ export class LoggerUtils {
 					errorMessage += `\nStack Trace:\n${error.stack}`;
 				}
 			} else {
-				errorMessage += `\nError Details: ${JSON.stringify(error)}`;
+				errorMessage += `\nError Details: ${this.safeStringify(error)}`;
 			}
 		}
 
@@ -43,7 +61,7 @@ export class LoggerUtils {
 		let warnMessage = `[WARN] ${timestamp} - ${message}`;
 
 		if (context) {
-			warnMessage += `\nContext: ${JSON.stringify(context, null, 2)}`;
+			warnMessage += `\nContext: ${this.safeStringify(context)}`;
 		}
 
 		this.logger.warn(warnMessage);
@@ -54,7 +72,7 @@ export class LoggerUtils {
 		let infoMessage = `[INFO] ${timestamp} - ${message}`;
 
 		if (context) {
-			infoMessage += `\nContext: ${JSON.stringify(context, null, 2)}`;
+			infoMessage += `\nContext: ${this.safeStringify(context)}`;
 		}
 
 		this.logger.log(infoMessage);
@@ -66,7 +84,7 @@ export class LoggerUtils {
 			let debugMessage = `[DEBUG] ${timestamp} - ${message}`;
 
 			if (context) {
-				debugMessage += `\nContext: ${JSON.stringify(context, null, 2)}`;
+				debugMessage += `\nContext: ${this.safeStringify(context)}`;
 			}
 
 			this.logger.debug(debugMessage);
