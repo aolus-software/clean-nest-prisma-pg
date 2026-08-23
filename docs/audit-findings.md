@@ -1088,3 +1088,92 @@ depth. Minutes.
   which raises a raw constraint violation as a 500 (its §P7). Note the trade-off: this succeeds
   silently without creating anything, which is its own kind of misleading.
 - **`HashUtils` is correct.** bcrypt with a cost of 10.
+
+## §P11 DTO validation failures return a different envelope from every other error — 🟠 inconsistency — CONFIRMED
+
+> Found while writing `docs/API_DOCUMENTATION.md` (item 12b) — the guide could not describe "the
+> error envelope" truthfully, because there are two.
+
+**Where:** `libs/common/src/pipes/custom-validation/custom-validation.pipe.ts:26-41`,
+`libs/common/src/response/response.ts:15-22` (`ErrorResponse`), and the `try/catch` in every
+controller method
+
+**What this is.** The house envelope is built by `ResponseHandler`: `{ code, success, message, data }`,
+with `errors` under the key `error` for field-mapped failures. Controllers call
+`ResponseHandler.handleError(res, error)` from a `catch` block, which is what applies it.
+
+**Why this can happen.** A global `ValidationPipe` runs **before** the controller method is entered,
+so an exception it throws never reaches that `try/catch` — Nest's default exception filter serialises
+the payload verbatim instead. The pipe's `exceptionFactory` builds
+`{ statusCode: 422, message, data: null, error }`, which is close to the house shape but not it: the
+key is `statusCode`, not `code`, and there is **no `success` field at all**.
+
+The pipe's own block comment asserts the opposite — "emits the project's 422 envelope, which
+ResponseHandler already understands" — which is how this survived: the intent is stated, and the
+mechanism that would carry it out is bypassed.
+
+**What it costs.** A client that branches on `success` gets `undefined` for every DTO validation
+failure — the single most common error an API returns — and one that reads `code` gets `undefined`
+too. Both work correctly for every other status, including 422s thrown by a service.
+
+**Verified by running it.** Two 422s from the same server:
+
+```jsonc
+// DTO validation (pipe, bypasses ResponseHandler)
+{ "statusCode": 422, "message": "property password_confirmation should not exist",
+  "data": null, "error": { ... } }
+
+// business rule (service -> handleError)
+{ "code": 422, "success": false, "message": "Invalid email or password",
+  "data": null, "error": { ... } }
+```
+
+**What we should do.** Make the pipe's factory emit `code` and `success` so both paths agree — a
+three-line change in `exceptionFactory`, and it is the safer direction because the house envelope is
+what every other response already uses. Alternatively register a global exception filter that applies
+`ResponseHandler` to everything, which fixes this class of problem rather than this instance, but is
+a larger change with more surface. Either way, correct the pipe's comment: it currently documents
+behaviour the code does not have. Under an hour.
+
+## §P12 Three permission filters are accepted and then ignored — 🟠 latent risk — CONFIRMED
+
+> Found while writing `docs/API_DOCUMENTATION.md` (item 12b), by listing each endpoint's allow-listed
+> filter keys and checking that the repository implements a `where` branch for every one.
+
+**Where:** `libs/repositories/src/repositories/permission.repository.ts:25-31` (the allow-list) against
+`:86-104` (the implemented branches)
+
+**What this is.** Each list repository exports `<entity>FilterableFields`, which does two jobs: it is
+the allow-list `findAll` validates `filter[<key>]` against, and it is what the controller passes to
+`@ApiDatatableQueries` so `/docs` advertises exactly what is enforced. A key in that array is a
+promise that the endpoint filters by it.
+
+**Why this can happen.** The permission array names five keys —
+`["id", "name", "group", "createdAt", "updatedAt"]` — and the `where` builder implements two:
+
+```ts
+if (queryParam.filter["name"])  { /* contains, insensitive */ }
+if (queryParam.filter["group"]) { /* contains, insensitive */ }
+// id, createdAt, updatedAt: no branch
+```
+
+The allow-list check passes, because the key *is* listed. Nothing downstream notices there is no
+branch for it.
+
+**What it costs.** `GET /settings/permissions?filter[id]=<uuid>` returns **200 and the full,
+unfiltered page**. A caller cannot distinguish that from a genuine match, and `/docs` actively
+advertises the key as supported. This is worse than a rejected key: a 400 tells the caller to stop,
+whereas a silently unfiltered page is data they did not ask for, presented as data they did. It is
+the same defect Tier 7 found and fixed in the `clean-elysia-prisma` sibling.
+
+The sibling repositories here are clean — `role` implements all three of its keys and `user` all six.
+
+**What we should do.** Either implement the three branches — `id` as an equality, `createdAt` and
+`updatedAt` through `parseDateRangeFilter` exactly as `role.repository.ts` already does — or remove
+them from the array so the endpoint rejects them with the 400 it rejects any other unknown key with.
+Implementing is the better default here: the two date keys are already implemented on the sibling
+endpoints, so their absence is an oversight rather than a decision. Under an hour.
+
+**Worth generalising.** The check that found this is cheap and mechanical: for each list repository,
+diff the exported `FilterableFields` array against the keys the `where` builder actually reads. That
+belongs in review whenever a filter key is added.

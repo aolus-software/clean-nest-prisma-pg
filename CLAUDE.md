@@ -99,6 +99,19 @@ Highlights:
 - **No hardcoded user-facing strings** — every response message, exception message, and validation message resolves through i18n, with the key added to both `en` and `id` before the code that uses it.
 - **Uniqueness and business-rule failures are 422**, not 409, and the field map is keyed `error` (singular): `{ message, error: { field: [...] } }`. See `.claude/rules/response-codes.md`.
 
+## Deeper documentation
+
+Topic guides live in [`docs/`](./docs/README.md) — written for someone consuming or operating the
+service, where `.claude/rules/` is written for someone changing it:
+
+- [`docs/CONFIGURATION.md`](./docs/CONFIGURATION.md) — every env var, its default, and what reads it
+- [`docs/API_DOCUMENTATION.md`](./docs/API_DOCUMENTATION.md) — response envelope, auth, route map, list-query parameters
+- [`docs/ERROR_HANDLING.md`](./docs/ERROR_HANDLING.md) — exception-to-status mapping and the two error shapes
+- [`docs/SECURITY.md`](./docs/SECURITY.md) — authentication, RBAC, rate limiting, CORS and headers, tokens
+- [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) — the PM2 model and the deploy targets
+- [`docs/SHARED_LIBRARIES.md`](./docs/SHARED_LIBRARIES.md) — what belongs in each `libs/` alias
+- [`docs/audit-findings.md`](./docs/audit-findings.md) — audit findings, resolved and open
+
 ## Skills, rules, and commands
 
 - `.claude/rules/` — path-scoped coding standards for this codebase. [`.claude/rules/README.md`](.claude/rules/README.md) indexes all 20 with their scope; `contradiction-halt.md` and `documentation.md` apply to every change.

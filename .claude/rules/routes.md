@@ -31,11 +31,12 @@ permission unless the action genuinely warrants its own.
 
 ## Guarding a controller
 
-Apply the guards once at the class, then gate each method:
+**The guards are global** — `AuthGuard`, `PermissionGuard` and `RoleGuard` are `APP_GUARD` providers
+registered in that order, so a controller carries **no `@UseGuards`**. Every route is authenticated by
+default; gate each method with the permission or role it needs:
 
 ```ts
 @Controller("users")
-@UseGuards(AuthGuard, PermissionGuard, RoleGuard)
 @ApiTags("Settings/Users")
 @ApiBearerAuth("Bearer")
 export class UsersController {
@@ -45,13 +46,17 @@ export class UsersController {
 }
 ```
 
-- Include only the guards a controller actually uses: `PermissionGuard` if any method carries
-  `@PermissionAuth`, `RoleGuard` if any carries `@RoleAuth`. `AuthGuard` always comes first.
-- **Every method behind `AuthGuard` needs its own `@PermissionAuth` or `@RoleAuth`**, or a comment
-  saying why authentication alone is sufficient. A guard in `@UseGuards` with no metadata decorator
-  on the method proves *who* the caller is; it does not restrict *what* they may do.
-- A class-level `@RoleAuth` (as on `PermissionsController`) applies to every method — do not repeat
-  it per method.
+- **Every authenticated method needs its own `@PermissionAuth` or `@RoleAuth`**, or a comment saying
+  why authentication alone is sufficient. The guards allow what they have no metadata for, so an
+  undecorated method proves *who* the caller is without restricting *what* they may do.
+- **`@Public()` is the only way out of authentication.** Put it on the handler, or on the controller
+  when every route is public. Nothing else opts out.
+- A class-level `@PermissionAuth` / `@RoleAuth` applies to every method on that controller — the
+  guards read `getAllAndOverride([getHandler(), getClass()])`. This used not to work: they read only
+  `getHandler()`, so the class-level `@RoleAuth("superuser")` on `PermissionsController` was silently
+  ignored and every permission route was reachable by any authenticated user.
+- `@PermissionAuth` is **conjunctive** — two strings mean both are required. `@RoleAuth` is
+  **disjunctive** — any one of the listed roles suffices. Both short-circuit for `superuser`.
 - Permission strings are `entity:action` with the entity **singular**: `user:create`, `user:list`,
   `user:view`, `user:update`, `user:delete`. See `module.md`.
 
@@ -63,7 +68,7 @@ GET    /                                    app health string — @ApiTags("App"
 GET    /health                              @ApiTags("Health") — terminus composite check
 GET    /health/live                         liveness probe
 
-# Auth (/auth) — @ApiTags("Auth"), no class-level guard; each route is public unless marked
+# Auth (/auth) — @ApiTags("Auth"); the six public routes carry @Public(), /profile does not
 POST   /auth/login                          PUBLIC
 POST   /auth/register                       PUBLIC
 POST   /auth/resend-verification-email      PUBLIC
@@ -71,9 +76,9 @@ POST   /auth/verify-email                   PUBLIC
 POST   /auth/forgot-password                PUBLIC
 POST   /auth/validate-reset-password-token  PUBLIC
 POST   /auth/reset-password                 PUBLIC
-GET    /auth/profile                        @UseGuards(AuthGuard) — own identity
+GET    /auth/profile                        authenticated — own identity, no @Public()
 
-# Settings / Users (/users) — AuthGuard + PermissionGuard + RoleGuard
+# Settings / Users (/users) — guards are global; no @UseGuards on the class
 POST   /users                               user:create
 POST   /users/:id/resend-verify-email       user:update
 GET    /users                               user:list
@@ -83,14 +88,14 @@ PATCH  /users/:id/status                    user:update
 PATCH  /users/:id/password                  @RoleAuth("superuser")
 DELETE /users/:id                           user:delete
 
-# Settings / Roles (/roles) — AuthGuard + PermissionGuard
+# Settings / Roles (/roles) — guards are global; no @UseGuards on the class
 POST   /roles                               role:create
 GET    /roles                               role:list
 GET    /roles/:id                           role:view
 PATCH  /roles/:id                           role:update
 DELETE /roles/:id                           role:delete
 
-# Settings / Permissions (/permissions) — AuthGuard + RoleGuard, @RoleAuth("superuser") on the class
+# Settings / Permissions (/permissions) — @RoleAuth("superuser") on the class, now actually enforced
 POST   /permissions                         superuser
 GET    /permissions                         superuser
 GET    /permissions/:id                     superuser
@@ -114,5 +119,5 @@ Tag values mirror the module path with `/` as the separator: `Settings/Users`, `
 `Settings/Permissions`, `Health`. `swaggerConfig` (`libs/config/src/app/swagger.config.ts`) declares
 no `.addTag(...)` calls, so tags are created implicitly from `@ApiTags` and ordered by controller
 registration — a controller with no `@ApiTags` is a documentation bug, not a styling choice. Add
-`@ApiBearerAuth("Bearer")` to any controller behind `AuthGuard`; the scheme name must match the one
+`@ApiBearerAuth("Bearer")` to any controller whose routes are not `@Public()`; the scheme name must match the one
 registered in `swaggerConfig`.

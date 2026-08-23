@@ -22,6 +22,13 @@ describes, update that doc in the same change.** If nothing a doc covers changed
 | `CLAUDE.md` | a lib / path alias, the request flow, a "non-obvious bit", a convention, or a new module / runtime surface changes |
 | `Makefile` | a canonical command is added, renamed, or removed — `CLAUDE.md` quotes it, so both move together |
 | `.claude/rules/routes.md` | any route is added, renamed, re-gated, or removed |
+| `docs/CONFIGURATION.md` | an env var is added, renamed, defaulted differently, or removed |
+| `docs/API_DOCUMENTATION.md` | a route is added, renamed, re-gated, or its request/response shape changes — it carries the route map and the list-query allow-lists |
+| `docs/ERROR_HANDLING.md` | an exception's status mapping or the response envelope changes |
+| `docs/SECURITY.md` | auth, RBAC, rate limiting, CORS, helmet, password or token handling changes |
+| `docs/DEPLOYMENT.md` | the PM2 model, a deploy target, or the migration step changes |
+| `docs/SHARED_LIBRARIES.md` | a lib gains or loses a public surface, or the layering changes |
+| `docs/README.md` | a file is added to or removed from `docs/` — it is the index |
 | `.claude/rules/*.md` | a coded convention changes, or a new pattern ships with no rule yet — write one |
 | `.claude/commands/*.md` | a command's workflow or scope changes |
 | `libs/common/src/i18n/lang/{en,id}/*.json` | a user-facing string is added — **both languages, in the same change** (`i18n.md`) |
