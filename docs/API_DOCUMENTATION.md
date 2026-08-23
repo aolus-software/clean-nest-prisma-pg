@@ -22,18 +22,30 @@ Every response built by `ResponseHandler` carries the same four keys:
 The status is in the **body** as `code` as well as on the HTTP response, and the field map key is
 `error`, singular.
 
-> **One exception, and it is worth coding against.** A request that fails **DTO validation** is
-> rejected by a global pipe *before* the controller runs, so it never passes through
-> `ResponseHandler`. Those responses carry `statusCode` instead of `code` and have **no `success`
-> field**:
+> **Errors do not all use that envelope, and this is worth coding against.** Anything thrown before
+> the controller method is entered — by a guard, by the validation pipe, or by the router — never
+> reaches `ResponseHandler`. Four shapes exist today:
 >
 > ```jsonc
-> { "statusCode": 422, "message": "property foo should not exist",
->    "data": null, "error": { "foo": ["..."] } }
+> // 401 / 403 from a guard — note `error` is a STRING here
+> { "message": "Insufficient permissions", "error": "Forbidden", "statusCode": 403 }
+>
+> // 422 from DTO validation — `error` is a field map, but there is no `code` or `success`
+> { "statusCode": 422, "message": "The email field must be a valid email address.",
+>   "data": null, "error": { "email": ["..."] } }
+>
+> // 400 / 404 / 422 from a service — the full house envelope
+> { "code": 422, "success": false, "message": "Invalid email or password",
+>   "data": null, "error": { "email": ["..."] } }
+>
+> // 404 for an unmatched route
+> { "message": "Not Found", "statusCode": 404 }
 > ```
 >
-> A client that branches on `success` should treat its absence as a failure. This divergence is
-> recorded as §P11 in [audit-findings.md](./audit-findings.md) and is a known defect, not a design.
+> Practical advice until this is unified: **branch on the HTTP status, not on the body.** Read the
+> status from `code ?? statusCode`, treat a missing `success` as a failure, and check `typeof
+> body.error === "object"` before reading a field map off it. Recorded as §P11 in
+> [audit-findings.md](./audit-findings.md) — a known defect, not a design.
 
 ## Paginated responses
 

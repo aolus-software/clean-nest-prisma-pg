@@ -20,9 +20,10 @@ All exceptions come from `@nestjs/common`. Never throw a raw `Error`.
 `handleError` special-cases `UnprocessableEntityException` so its `{ message, error }` payload
 reaches the client; every other `HttpException` contributes its status and message.
 
-## The two error shapes
+## The four error shapes
 
-A client receives one of two shapes depending on **where** the failure happened.
+A client receives one of four shapes, depending on **where** the failure happened. Only one of them
+is the house envelope, and `error` is not the same type across them.
 
 **Thrown by a service or guard** — goes through `handleError`, gets the house envelope:
 
@@ -39,9 +40,27 @@ method, so the `try/catch` never sees it and Nest's default filter serialises th
    "data": null, "error": { "foo": ["..."] } }
 ```
 
-Note `statusCode` rather than `code`, and **no `success` field**. This is a known inconsistency,
-recorded as §P11 in [audit-findings.md](./audit-findings.md). Code defensively against it until it is
-fixed.
+Note `statusCode` rather than `code`, and **no `success` field**.
+
+**Thrown by a guard** (401, 403) — guards also run before the controller:
+
+```jsonc
+{ "message": "Insufficient permissions", "error": "Forbidden", "statusCode": 403 }
+```
+
+Here `error` is a **string**, not a field map — reading `error.email` off this is a bug waiting to
+happen.
+
+**An unmatched route** (404) is pure framework:
+
+```jsonc
+{ "message": "Not Found", "statusCode": 404 }
+```
+
+The common cause: `handleError` lives in each controller's `catch`, so it can only normalise what the
+controller catches. Guards, pipes, and the router all throw earlier. Recorded as §P11 in
+[audit-findings.md](./audit-findings.md), where the fix is a global exception filter rather than a
+patch to any one of these. Until then, branch on the HTTP status rather than the body shape.
 
 ## Which exception to use
 

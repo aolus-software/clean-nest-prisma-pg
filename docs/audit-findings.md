@@ -902,6 +902,21 @@ taken: `cache-manager-ioredis-yet` is now unused and could be removed (a separat
 own lockfile churn), and nothing yet proves the cross-worker behaviour under an actual multi-instance
 PM2 run — this was verified against a single process.
 
+> **Both follow-ups are now closed.**
+>
+> `cache-manager-ioredis-yet` was removed once nothing imported it.
+>
+> **The cross-worker behaviour was proven against a real PM2 cluster on 2026-08-23** — not simulated.
+> `ecosystem.config.js`'s production app was started with `instances: "max"`, giving **10 workers** in
+> cluster mode behind one port. Sequence: 40 warm-up requests as `admin` (all 200, spreading the
+> cached identity across workers); **one** revoke of the `admin` role's permissions, which by
+> definition is served by exactly one worker; then 60 immediate requests round-robined across all ten
+> — **all 60 returned 403**, with no sleep. Restoring the permissions returned all 30 follow-up
+> requests to 200. Redis held **one `user:<id>` key per user, not one per worker**, which is the
+> mechanism: the invalidation deletes a key every worker reads, rather than a copy only one of them
+> holds. Before the fix this test would have left nine workers serving the revoked role until their
+> own in-process copies expired.
+
 > **Not present in this repo:** the `permissionIds` / `permission_ids` mismatch that made role
 > permission assignment silently non-functional in `clean-nest-drizzle-pg` (its §R2.5). This repo
 > builds the join rows in the service from `createRoleDto.permissionIds` directly, so the field never
@@ -1089,7 +1104,7 @@ depth. Minutes.
   silently without creating anything, which is its own kind of misleading.
 - **`HashUtils` is correct.** bcrypt with a cost of 10.
 
-## §P11 DTO validation failures return a different envelope from every other error — 🟠 inconsistency — CONFIRMED
+## §P11 Four different error envelopes ship, and `error` changes type between them — 🟠 inconsistency — CONFIRMED
 
 > Found while writing `docs/API_DOCUMENTATION.md` (item 12b) — the guide could not describe "the
 > error envelope" truthfully, because there are two.
@@ -1116,24 +1131,49 @@ mechanism that would carry it out is bypassed.
 failure — the single most common error an API returns — and one that reads `code` gets `undefined`
 too. Both work correctly for every other status, including 422s thrown by a service.
 
-**Verified by running it.** Two 422s from the same server:
+**Verified by running it — and it is worse than two shapes.** Every error path was exercised against
+one running server. There are **four**, and the guard case was missed when this finding was first
+written:
 
 ```jsonc
-// DTO validation (pipe, bypasses ResponseHandler)
-{ "statusCode": 422, "message": "property password_confirmation should not exist",
-  "data": null, "error": { ... } }
+// 1. guards (401, 403) — AuthGuard / PermissionGuard, global, throw before the controller
+{ "message": "Insufficient permissions", "error": "Forbidden", "statusCode": 403 }
 
-// business rule (service -> handleError)
+// 2. DTO validation (422) — CustomValidationPipe, global, also before the controller
+{ "statusCode": 422, "message": "The email field must be a valid email address.",
+  "data": null, "error": { "email": ["The email field must be a valid email address."] } }
+
+// 3. service or repository (400, 404, 422) — reaches the controller catch, so ResponseHandler applies
 { "code": 422, "success": false, "message": "Invalid email or password",
-  "data": null, "error": { ... } }
+  "data": null, "error": { "email": ["Invalid email or password"] } }
+
+// 4. unmatched route (404) — pure framework
+{ "message": "Not Found", "statusCode": 404 }
 ```
 
-**What we should do.** Make the pipe's factory emit `code` and `success` so both paths agree — a
-three-line change in `exceptionFactory`, and it is the safer direction because the house envelope is
-what every other response already uses. Alternatively register a global exception filter that applies
-`ResponseHandler` to everything, which fixes this class of problem rather than this instance, but is
-a larger change with more surface. Either way, correct the pipe's comment: it currently documents
-behaviour the code does not have. Under an hour.
+**`error` changes type between them.** It is the string `"Forbidden"` in shape 1 and a
+`{ field: [messages] }` map in shapes 2 and 3. A client doing `body.error.email` does not merely get
+`undefined` on a 403 — it reads a property off a string. Only shape 3 carries `code` and `success` at
+all.
+
+The common cause is the same in shapes 1, 2 and 4: **anything thrown outside the controller method's
+`try/catch` never reaches `ResponseHandler`**, and guards and pipes both run before the method is
+entered. `handleError` can only normalise what the controller catches.
+
+**What we should do.** Patching the pipe alone is no longer enough — it would fix shape 2 and leave
+shapes 1 and 4. **Register a global exception filter** that runs `ResponseHandler` over every
+`HttpException`, whatever threw it, and drop the per-controller `try/catch` that currently does the
+same job for a subset. That is the only change that makes the envelope a property of the application
+rather than of the code path, and it removes the class of defect instead of this instance of it.
+Roughly a day, including re-checking every status against the filter.
+
+Whatever is chosen, correct the pipe's block comment — it asserts it "emits the project's 422
+envelope, which ResponseHandler already understands", and the mechanism that would carry that out is
+bypassed. That claim is how this survived review.
+
+**Also worth deciding:** `GET /health/live` returns a bare `{ "status": "ok" }` with no envelope at
+all, because it returns a literal rather than going through `ResponseHandler`. Defensible for a probe
+that orchestrators parse, but it should be a decision rather than an accident.
 
 ## §P12 Three permission filters are accepted and then ignored — 🟠 latent risk — CONFIRMED
 
@@ -1177,3 +1217,82 @@ endpoints, so their absence is an oversight rather than a decision. Under an hou
 **Worth generalising.** The check that found this is cheap and mechanical: for each list repository,
 diff the exported `FilterableFields` array against the keys the `where` builder actually reads. That
 belongs in review whenever a filter key is added.
+
+## §P13 `DateUtils.parse` reads a bare date in the host timezone, not the app's — 🟠 latent risk — CONFIRMED — ✅ RESOLVED 2026-08-23 (partially)
+
+**Where:** `libs/utils/src/date/date.utils.ts` (`parse`), and its callers in
+`libs/common/src/datatable/date-filter.ts` and `src/auth/auth.service.ts`
+
+**What this is.** `DateUtils` centralises date handling on `APP_TIMEZONE` so the application behaves
+the same wherever it runs. `parse(dateString)` is the entry point for turning a string into a
+`dayjs` object.
+
+**Why this can happen.** `parse` is `dayjs(dateString).tz(APP_TIMEZONE)`. For a string carrying an
+offset that is correct — the instant is unambiguous and `.tz()` re-presents it. For an **offset-less**
+string such as `"2024-03-05"` it is not: `dayjs("2024-03-05")` reads it in the **host** timezone, and
+`.tz()` only re-presents that instant; it does not reinterpret the input as being in `APP_TIMEZONE`.
+
+**What it costs.** Whenever the host timezone is ahead of `APP_TIMEZONE`, a bare date lands on the
+**previous day**. Measured directly, for input `"2024-03-05"`:
+
+| host `TZ` | `APP_TIMEZONE` | lower bound produced | correct |
+| --- | --- | --- | --- |
+| `UTC` | `America/Los_Angeles` | **2024-03-04** | 2024-03-05 |
+| `Europe/Berlin` | `America/New_York` | **2024-03-04** | 2024-03-05 |
+| `Asia/Jakarta` | `UTC` | **2024-03-04** | 2024-03-05 |
+| `UTC` | `Asia/Jakarta` | 2024-03-05 | 2024-03-05 |
+
+The third row is the one that matters most: **`APP_TIMEZONE` defaults to `UTC`**, so any host not set
+to UTC — every developer machine, and any server that has not had its clock zone set — reports the
+wrong day. A report filtered to a month silently starts a day early and ends a day early.
+
+**What we should do — partly done.** `DateUtils.parseInZone(dateString)` was added, using
+`dayjs.tz(dateString, APP_TIMEZONE)`, which parses the string *as* wall-clock time in that zone, and
+`parseDateRangeFilter` now uses it. Verified across five host/app pairs including a 26-hour spread
+(`Pacific/Kiritimati` host, `Pacific/Niue` app): the window now lands on the requested calendar day in
+every combination.
+
+`parse` itself was **left alone deliberately** — its three other callers all pass
+`.toISOString()`, where it is correct, and changing it would alter their behaviour. It now carries a
+comment saying what it is and is not for. **The remaining risk is that the trap is still reachable:**
+the next person to call `parse` with a user-supplied date reintroduces this. Making `parse` reject
+offset-less input outright would close it for good and is worth considering.
+
+> This defect was carried by the `parseDateRangeFilter` helper written earlier in this session, and
+> its comment claimed the opposite — that dates resolved in `APP_TIMEZONE`. The claim was propagated
+> into `docs/API_DOCUMENTATION.md` before being tested. Both are now corrected, and the claim is true.
+
+## §P14 Stack traces and debug logs are suppressed in the one environment that needs them — 🟠 inconsistency — CONFIRMED
+
+**Where:** `libs/utils/src/logger/logger.utils.ts:6`, `ecosystem.config.js`,
+`libs/config/src/env/index.ts` (the `NODE_ENV` choices)
+
+**What this is.** `LoggerUtils` gates two things on being in development: `error()` appends the stack
+trace only when `isDevelopment`, and `debug()` emits nothing otherwise.
+
+**Why this can happen.** The gate is `getEnv().NODE_ENV === "development"`. The envalid `choices` list
+accepts five values — `development`, `dev`, `staging`, `production`, `test` — and
+`ecosystem.config.js` sets the development app's `NODE_ENV` to **`dev`**, not `development`. The two
+strings never match, so on the deployed dev environment `isDevelopment` is permanently `false`.
+
+**What it costs.** The dev deployment logs errors without stack traces and drops every `debug()` call
+— exactly the environment where both are most wanted, and the failure is silent. Only a local run
+that happens to set `NODE_ENV=development` gets them.
+
+**What we should do.** Test the set, not the string:
+`["development", "dev"].includes(getEnv().NODE_ENV)`. One line. Better still, drive it from an
+explicit `LOG_LEVEL` variable so the intent is configured rather than inferred from a deployment
+label — that is what the Elysia siblings do.
+
+**One related risk in the same file:** every method serialises its `context` with
+`JSON.stringify`, and `error()` does the same for a non-`Error` thrown value. `JSON.stringify` throws
+on a circular structure, and database driver errors frequently carry one — so a logging call inside
+the 500 handler can itself throw, turning a handled error into an unhandled one with nothing logged.
+Wrap the serialisation in a `try/catch` or use a safe stringifier.
+
+> **§P15 is not present in this repo.** The sibling `clean-nest-drizzle-pg` declares a
+> database-level `.unique()` on `users.email` while soft-deleting users, so re-creating a deleted
+> user's address there returns a 500 — the service check filters `deleted_at` and the constraint does
+> not. This repo deliberately has `@@index([email])` with **no** `@unique`, exactly so a soft-deleted
+> address stays reusable, and uniqueness among live users is a service check only. Do not "restore"
+> the constraint to match the sibling; the sibling is the one that is wrong.

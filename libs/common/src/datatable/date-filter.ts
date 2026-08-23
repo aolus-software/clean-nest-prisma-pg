@@ -17,9 +17,11 @@ export type DateRangeFilter = { gte: Date; lte: Date };
      reach the driver, and surface as a 500 or match nothing at all.
    - A single date means that whole day, not "from midnight onwards".
 
-   Timezone note: DateUtils resolves a bare YYYY-MM-DD in the application's
-   configured timezone, so the window lands on the calendar day the caller
-   meant rather than the host's. */
+   Timezone: parsed with DateUtils.parseInZone, which reads a bare YYYY-MM-DD
+   as wall-clock time in APP_TIMEZONE. DateUtils.parse would be wrong here — it
+   reads offset-less input in the HOST timezone and only re-presents the
+   instant, so on a host ahead of APP_TIMEZONE the window lands on the previous
+   day. APP_TIMEZONE defaults to UTC, so any non-UTC host hits that. */
 export function parseDateRangeFilter(
 	value: string,
 	key: string,
@@ -40,8 +42,8 @@ export function parseDateRangeFilter(
 		reject();
 	}
 
-	const start = DateUtils.parse(parts[0]);
-	const end = DateUtils.parse(parts[1] ?? parts[0]);
+	const start = DateUtils.parseInZone(parts[0]);
+	const end = DateUtils.parseInZone(parts[1] ?? parts[0]);
 
 	if (!start.isValid() || !end.isValid()) {
 		reject();
