@@ -906,3 +906,185 @@ PM2 run — this was verified against a single process.
 > permission assignment silently non-functional in `clean-nest-drizzle-pg` (its §R2.5). This repo
 > builds the join rows in the service from `createRoleDto.permissionIds` directly, so the field never
 > crosses a boundary that could rename it.
+
+---
+
+# Sweep 3 — code read, pass 2 (2026-08-23)
+
+**Scope:** the surfaces the Coverage block of sweep 2 listed as *not reached* — the settings
+services, all DTOs, the validation pipes, `libs/utils`, the i18n catalogues, and the seeders'
+relationship to the permission vocabulary.
+**Ground truth:** `CLAUDE.md`, `.claude/rules/*.md`, and the running code.
+
+**Severity legend:** 🔴 bug · 🟠 inconsistency / latent risk · 🟡 hygiene · 📄 doc
+**Evidence:** CONFIRMED (traced end to end) · SUSPECT (something unverified, named below)
+
+> **Read-only. Nothing below has been fixed.** Findings use a `§P` prefix so they never collide with
+> the `§R` sweep above. Numbering is aligned with the sibling `clean-nest-drizzle-pg` sweep; gaps
+> mean "not present in this repo".
+
+**Still not reached, after two passes:** the settings controllers' Swagger decorator blocks beyond a
+spot-check, `libs/utils/src/{date,string,number,logger}` (~750 lines of helpers), `prisma/schema.prisma`
+and the migrations, and the `api-response` / `api-datatable-queries` decorators.
+
+## §P1 A permission created through the API can never satisfy a guard — 🔴 bug — CONFIRMED
+
+**Where:** `src/settings/permissions/permissions.service.ts:17`,
+`prisma/seed/permission.seed.ts:9` (the convention)
+
+**What this is.** A permission's `name` is the string `@PermissionAuth(...)` matches against. The
+seeder builds the whole catalogue as `` `${group}:${action}` `` — `user:list`, `role:create` — and
+every guard in `src/` is written in that vocabulary. `POST /settings/permissions` exists so an
+operator can extend the catalogue without editing the seeder.
+
+**Why this can happen.** The create path composes the two halves in the **opposite order**:
+
+```ts
+// seeder — the convention every guard uses
+const permissionName = `${group}:${action}`;      // -> "user:list"
+
+// service create — reversed
+name: `${action}:${createPermissionDto.group}`,   // -> "list:user"
+```
+
+**What it costs.** Every permission created through the API is unusable. An operator adding a
+`report:export` permission posts `{ names: ["export"], group: "report" }` and gets a row named
+`export:report`; a route guarded `@PermissionAuth("report:export")` will never match it, and that
+route then fails **closed** for everyone except `superuser`, with nothing logged.
+
+**Verified by running it.** `POST /settings/permissions {names:["export"], group:"report"}` stored
+`export:report`. The seeded convention would be `report:export`.
+
+**What we should do.** Compose `` `${group}:${action}` ``, matching the seeder, and rename the DTO
+field so it says what it holds — `names` are *actions*, not full permission names, which is the
+ambiguity that allowed the inversion. Under an hour; decide whether to migrate any API-created rows
+first. **The sibling `clean-nest-drizzle-pg` has the identical inversion**, in two places.
+
+## §P2 One `sendMail` is still enqueued inside its transaction — 🟠 latent risk — CONFIRMED
+
+**Where:** `src/settings/users/users.service.ts:57` (inside the `prisma.$transaction` opened at `:41`)
+
+**What this is.** §R5.1 established that enqueuing a BullMQ job inside a database transaction lets
+the worker send a verification link whose token row is not committed yet, or send one at all for a
+write that rolled back — which this repo's own `queue.md` rule 11 already forbids.
+
+**Why this can happen.** The §R5.1 fix corrected `src/auth/auth.service.ts` and **missed this one** —
+an administrator creating a user through `POST /settings/users` follows the same
+write-token-then-mail shape in a different file. A sweep of every `sendMail` call site against its
+enclosing block finds exactly one remaining, here.
+
+**What it costs.** The same race and rollback window as §R5.1, on the admin-driven user creation path
+rather than self-registration. Narrower exposure, identical mechanism.
+
+**What we should do.** Return the token from the transaction callback and enqueue after it commits,
+exactly as `auth.service.ts` now does. Minutes. This is a gap in the earlier fix, not a new class of
+defect.
+
+## §P3 `EncryptionUtils` is unused, and would be a poor choice if it were used — 🟠 latent risk — CONFIRMED
+
+**Where:** `libs/utils/src/encryption/encryption.utils.ts`
+
+**What this is.** A four-method AES wrapper over `crypto-js`, keyed on `APP_SECRET`, exported from
+`@utils` alongside `HashUtils` and `JWTUtils`.
+
+**Why this can happen.** It has **zero call sites** in `src/` or `libs/` — it ships as part of the
+template rather than in response to a need. Two properties make it a trap for the first person who
+reaches for it: `CryptoJS.AES.encrypt(text, passphraseString)` derives its key with OpenSSL's
+`EVP_BytesToKey` (MD5, one iteration, no configurable work factor), and the default mode is CBC with
+no authentication tag, so ciphertext is malleable and tampering is undetectable. `crypto-js` itself
+was archived by its maintainer in favour of the platform `crypto` API.
+
+**What it costs.** Nothing today. The cost is that it looks like the house-approved way to encrypt
+something and sits behind the same `@utils` import as the correctly-built `HashUtils`.
+
+**What we should do.** Either delete it — it is dead — or replace the internals with `node:crypto`
+AES-256-GCM and a proper KDF. Deleting is the honest default for a template. Half an hour either way.
+
+## §P4 Services reach past the repository into the database — 🟠 inconsistency — CONFIRMED
+
+**Where:** `src/settings/permissions/permissions.service.ts` (`update`, `remove`),
+`src/settings/roles/roles.service.ts` (the `prisma.role.findFirst` existence checks)
+
+**What this is.** `.claude/rules/nestjs.md` and `repository.md` both state the layering: services
+call repositories, repositories own the queries.
+
+**Why this can happen.** Several methods build `prisma.<model>.findFirst(...)` inline instead. It
+reads naturally because `prisma` is an exported singleton rather than an injected provider, so there
+is no friction to reaching for it.
+
+**What it costs.** No wrong behaviour today. The cost is that the soft-delete filter, the column
+selection, and the "what does a miss return" convention are decided in two places.
+
+**What we should do.** Add the missing lookups to their repositories and call those. Under an hour.
+Worth doing when §P1 is fixed, since it touches the same permissions service.
+
+## §P5 A DTO imports the schema by relative path, bypassing the alias — 🟡 hygiene — CONFIRMED
+
+**Where:** `src/settings/users/dto/create-user.dto.ts` (the enum import)
+
+**What this is.** `imports-and-naming.md` and `shared-code.md` both require the alias for cross-layer
+imports and explicitly forbid `../../libs/...`.
+
+**What it costs.** It breaks the moment the file moves, and it bypasses the barrel — so a symbol
+deliberately *not* re-exported can still be imported, which is what the barrel exists to control.
+
+**What we should do.** Import through the alias. One line.
+
+## §P10 Suspending an account produces a misleading error, and the check is implicit — 🟠 latent risk — CONFIRMED
+
+> **This finding was rewritten after running it.** Read alone, the code looks like a security hole —
+> `login` never checks `user.status`, and the catalogue carries an unused
+> `message.auth.account_inactive`. Running it showed the login *is* refused. The finding below is what
+> is actually true, and the original guess is recorded here because it is exactly the kind of
+> conclusion that reading produces and execution corrects.
+
+**Where:** `src/auth/auth.service.ts` (`login`), `libs/repositories/src/repositories/user.repository.ts:321-325`
+(`userInformation`), `libs/common/src/i18n/lang/en/message.json:33`
+
+**What this is.** `User.status` can be `ACTIVE`, `INACTIVE`, `SUSPENDED` or `BLOCKED`. Suspending an
+account is expected to stop that user logging in and to tell them why.
+
+**Why this can happen.** `login` verifies the password and the email-verification state, then calls
+`UserRepository().userInformation(user.id)` to build the caller's roles and permissions. That query
+filters `status: UserStatus.ACTIVE`, so for a suspended user it returns nothing and login fails on
+the generic branch — `"User information could not be retrieved"`. The status is therefore enforced,
+but as a side effect of a read filter rather than as a check, and the message describes an internal
+failure rather than the real reason. `findByMail` already selects and returns `status`, and
+`message.auth.account_inactive` ("Your account is not active") exists in both catalogues and is
+referenced nowhere.
+
+**Verified by running it.** With `status` set to `SUSPENDED`, then `BLOCKED`, login returned **422
+"User information could not be retrieved"** both times — refused, but for the wrong stated reason.
+
+**What it costs.** No unauthorised access. Two smaller costs: a suspended user is told something that
+reads like a server fault, so they contact support instead of their administrator; and the
+enforcement is one edit away from disappearing — relaxing the `status` filter in `userInformation`,
+which is a read-shaping concern, would silently remove the login restriction with nothing else
+catching it. The sibling `clean-nest-drizzle-pg` has the same filter **and** an explicit
+`user.status !== "active"` check in `login`, which is why it returns the correct message.
+
+**What we should do.** Add the explicit check in `login` after the password comparison, throwing
+`message.auth.account_inactive` — matching the sibling. Keep the repository filter as defence in
+depth. Minutes.
+
+---
+
+## Verified correct — checked, nothing found
+
+- **The i18n catalogues are in exact parity.** `message.json` 60/60, `validation.json` 7/7,
+  `email.json` 2/2 between `en` and `id`. A reverse check — every `t("...")` and
+  `i18nValidationMessage("...")` in `src/` and `libs/` resolved against the catalogue — found **no
+  missing key**, so no raw key string can reach a client. Ten catalogue entries are unused; one of
+  them (`account_inactive`) is what led to §P10.
+- **`CustomValidationPipe` is solid.** `whitelist` and `forbidNonWhitelisted` are both on, so unknown
+  properties are stripped and rejected; `transform` with implicit conversion is enabled; the
+  `key|{args}` encoding from `i18nValidationMessage` is decoded and translated with the field name
+  injected as both `property` and `field`; nested errors are flattened with dotted paths.
+- **Every DTO decorator carries an i18n message.** No class-validator constraint falls back to the
+  library's own English string.
+- **The privilege-granting route is gated correctly.** `PATCH /settings/users/:id/password` is
+  `@RoleAuth("superuser")`, not a permission.
+- **Permission create is conflict-safe.** `createMany({ skipDuplicates: true })` — unlike the sibling,
+  which raises a raw constraint violation as a 500 (its §P7). Note the trade-off: this succeeds
+  silently without creating anything, which is its own kind of misleading.
+- **`HashUtils` is correct.** bcrypt with a cost of 10.
