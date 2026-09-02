@@ -14,7 +14,7 @@ Use **Bun** as the package manager and runner. The `Makefile` is the canonical e
 # Development
 make dev                 # bun run start:dev (watch)
 bun run start:debug      # debugger
-make build               # bun run build (nest build / webpack bundle)
+make build               # bun run build (nest build / rspack bundle)
 bun run start:prod       # node dist/main
 
 # Quality

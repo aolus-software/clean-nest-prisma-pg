@@ -23,6 +23,15 @@
 		"strictBindCallApply": false,
 		"noFallthroughCasesInSwitch": false,
 		"paths": {
+			/* Nest 12 ships ESM with an exports map whose "./*" -> "./*.js" rule no
+			   longer resolves the bare "@nestjs/common/interfaces" directory subpath.
+			   Packages still built for Nest 11 (@nestjs-modules/mailer, @nestjs/throttler,
+			   nestjs-i18n) import it that way, and without this shim their types silently
+			   degrade to `any` under moduleResolution: nodenext. Remove once those
+			   packages ship Nest 12 builds. */
+			"@nestjs/common/interfaces": [
+				"./node_modules/@nestjs/common/interfaces/index.d.ts"
+			],
 			"@config": ["./libs/config/src"],
 			"@config/*": ["./libs/config/src/*"],
 			"@common": ["./libs/common/src"],

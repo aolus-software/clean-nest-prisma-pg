@@ -7,7 +7,7 @@ import {
 	Public,
 	ResponseHandler,
 } from "@common";
-import { UserInformation } from "@repositories";
+import type { UserInformation } from "@repositories";
 import { RegisterDto } from "./dto/register.dto";
 import { ResendEmailVerificationDto } from "./dto/resend-email-verification.dto";
 import { EmailVerificationDto } from "./dto/email-verification.dto";

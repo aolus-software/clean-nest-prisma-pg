@@ -5,7 +5,7 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "watchAssets": true,
-    "webpack": true
+    "builder": "rspack"
   },
   "projects": {
     "common": {
