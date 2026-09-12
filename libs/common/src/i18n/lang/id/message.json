@@ -51,7 +51,8 @@
 		"not_found": "Pengguna dengan ID {id} tidak ditemukan",
 		"email_exists": "Email sudah terdaftar",
 		"not_created": "Pengguna gagal dibuat",
-		"email_already_verified": "Email sudah diverifikasi"
+		"email_already_verified": "Email sudah diverifikasi",
+		"roles_invalid": "Satu atau beberapa peran tidak ada"
 	},
 	"role": {
 		"create_success": "Peran berhasil dibuat",

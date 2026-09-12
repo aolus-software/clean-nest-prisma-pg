@@ -51,7 +51,8 @@
 		"not_found": "User with ID {id} not found",
 		"email_exists": "Email already exists",
 		"not_created": "User not created",
-		"email_already_verified": "Email is already verified"
+		"email_already_verified": "Email is already verified",
+		"roles_invalid": "One or more roles do not exist"
 	},
 	"role": {
 		"create_success": "Role created successfully",

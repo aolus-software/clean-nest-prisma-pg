@@ -34,6 +34,19 @@ export class UsersService {
 			});
 		}
 
+		const roleExists = await prisma.role.findMany({
+			where: { id: { in: createUserDto.roleIds } },
+		});
+
+		if (roleExists.length !== createUserDto.roleIds.length) {
+			throw new UnprocessableEntityException({
+				message: this.i18n.t("message.user.roles_invalid"),
+				error: {
+					roleIds: [this.i18n.t("message.user.roles_invalid")],
+				},
+			});
+		}
+
 		const password = await HashUtils.generateHash(createUserDto.password);
 		const token = await prisma.$transaction(async (tx) => {
 			const user = await tx.user.create({
@@ -53,6 +66,15 @@ export class UsersService {
 					expiresAt: emailVerificationLifetime(),
 				},
 			});
+
+			if (createUserDto.roleIds.length > 0) {
+				await tx.userRole.createMany({
+					data: createUserDto.roleIds.map((roleId) => ({
+						userId: user.id,
+						roleId,
+					})),
+				});
+			}
 
 			return verificationToken;
 		});
@@ -145,6 +167,19 @@ export class UsersService {
 			});
 		}
 
+		const roleExists = await prisma.role.findMany({
+			where: { id: { in: updateUserDto.roleIds } },
+		});
+
+		if (roleExists.length !== updateUserDto.roleIds.length) {
+			throw new UnprocessableEntityException({
+				message: this.i18n.t("message.user.roles_invalid"),
+				error: {
+					roleIds: [this.i18n.t("message.user.roles_invalid")],
+				},
+			});
+		}
+
 		await prisma.$transaction(async (tx) => {
 			await tx.user.update({
 				where: { id },
@@ -154,6 +189,17 @@ export class UsersService {
 					status: updateUserDto.status,
 				},
 			});
+
+			await tx.userRole.deleteMany({ where: { userId: id } });
+
+			if (updateUserDto.roleIds.length > 0) {
+				await tx.userRole.createMany({
+					data: updateUserDto.roleIds.map((roleId) => ({
+						userId: id,
+						roleId,
+					})),
+				});
+			}
 		});
 
 		/* AuthStrategy resolves the caller's roles and permissions from this

@@ -50,4 +50,16 @@ export class CreateUserDto {
 		enum: UserStatus,
 	})
 	status: UserStatus;
+
+	@IsNotEmpty({ message: i18nValidationMessage("validation.NOT_EMPTY") })
+	@IsString({
+		each: true,
+		message: i18nValidationMessage("validation.IS_STRING"),
+	})
+	@ApiProperty({
+		description: "Array of role IDs assigned to the user",
+		example: ["role_123", "role_456"],
+		type: [String],
+	})
+	roleIds: string[];
 }
