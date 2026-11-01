@@ -20,7 +20,8 @@ re-exported from that library's `src/index.ts` or the alias import will not reso
 | Guards | `AuthGuard`, `PermissionGuard`, `RoleGuard` — all three registered globally as `APP_GUARD`; see [SECURITY.md](./SECURITY.md) |
 | Strategy | `AuthStrategy` — Passport JWT, resolves and caches the caller's identity |
 | Decorators | `@Public()`, `@PermissionAuth()`, `@RoleAuth()`, `@CurrentUser()`, `@ApiStandardResponses()`, `@ApiSuccessResponse()`, `@DefaultApiNotFoundResponse()`, `@ApiDatatableQueries()` |
-| Pipes | `CustomValidationPipe` (global; whitelists and translates), `FilterValidationPipe` |
+| Pipes | `CustomValidationPipe` (global; whitelists and translates), `FilterValidationPipe`, `UuidParamPipe` (422 on a malformed `:id`) |
+| Filters | `AllExceptionsFilter` (global; runs `ResponseHandler.handleError` over errors thrown outside a controller) |
 | Response | `ResponseHandler`, `successResponse` |
 | Cache | `CacheService` over Redis via Keyv, and the `UserCache(id)` key builder |
 | Mail | `MailService` (enqueues), `MailProcessor` (consumes), Handlebars templates per locale |

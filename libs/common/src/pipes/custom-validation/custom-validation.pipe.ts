@@ -32,7 +32,6 @@ export class CustomValidationPipe extends ValidationPipe {
 				const firstMessage = Object.values(formattedErrors)[0]?.[0] || fallback;
 
 				return new UnprocessableEntityException({
-					statusCode: 422,
 					message: firstMessage,
 					data: null,
 					error: formattedErrors,

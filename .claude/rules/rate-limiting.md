@@ -39,7 +39,7 @@ Use the `@nestjs/throttler` decorators only where a route genuinely differs from
 Keep any override's numbers as named constants and say in a comment why the route differs. Do not
 scatter magic numbers.
 
-**Tighten, don't loosen, on credential endpoints.** `POST /auth/login`,
+**Tighten, don't loosen, on credential endpoints.** `POST /auth/login`, `/auth/refresh`,
 `/auth/forgot-password`, `/auth/reset-password`, and `/auth/resend-verification-email` are
 unauthenticated and enumerable; if you change their policy it should be a stricter `@Throttle`, never
 a `@SkipThrottle`.

@@ -1,21 +1,32 @@
-import { Injectable, UnprocessableEntityException } from "@nestjs/common";
+import {
+	Injectable,
+	UnauthorizedException,
+	UnprocessableEntityException,
+} from "@nestjs/common";
 import { LoginDto } from "./dto/login.dto";
 import { prisma, UserInformation, UserRepository } from "@repositories";
 import {
 	DateUtils,
 	emailVerificationLifetime,
 	HashUtils,
+	JWTPayload,
 	JWTUtils,
 	resetPasswordLifetime,
 	StrUtils,
 } from "@utils";
-import { CacheService, MailService, UserCache } from "@common";
+import {
+	CacheService,
+	MailService,
+	RefreshTokenCache,
+	UserCache,
+} from "@common";
 import { RegisterDto } from "./dto/register.dto";
 import { ResendEmailVerificationDto } from "./dto/resend-email-verification.dto";
 import { EmailVerificationDto } from "./dto/email-verification.dto";
 import { ForgotPasswordDto } from "./dto/forgot-password.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { ResetPasswordTokenValidationDto } from "./dto/reset-password-token-validation.dto";
+import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { getEnv } from "@config";
 import { I18nService } from "nestjs-i18n";
 
@@ -86,12 +97,66 @@ export class AuthService {
 			null,
 		);
 
-		const accessToken = JWTUtils.generateAccessToken({ sub: user.id });
-		const refreshToken = JWTUtils.generateRefreshToken({ sub: user.id });
+		const { accessToken, refreshToken } = await this.issueTokens(user.id);
 
 		return {
 			user: userInformation,
 			accessToken,
+			refreshToken,
+		};
+	}
+
+	/* Exchange a refresh token for a new access + refresh pair. The token's jti
+	   must match the one stored for the user in Redis, and issuing the new pair
+	   replaces it, so each refresh token works once and anything that revokes
+	   the session (password change or reset, delete, suspend) rejects it at
+	   once. The user is re-read from the database, not the cache, so an account
+	   deactivated or deleted since login cannot refresh. */
+	async refresh(data: RefreshTokenDto): Promise<{
+		accessToken: string;
+		refreshToken: string;
+	}> {
+		let payload: JWTPayload;
+		try {
+			payload = JWTUtils.verifyRefreshToken(data.refreshToken);
+		} catch {
+			throw new UnauthorizedException(
+				this.i18n.t("message.auth.invalid_refresh_token"),
+			);
+		}
+
+		const storedJti = await this.cacheService.get<string>(
+			RefreshTokenCache(payload.sub),
+		);
+		if (!payload.jti || storedJti !== payload.jti) {
+			throw new UnauthorizedException(
+				this.i18n.t("message.auth.invalid_refresh_token"),
+			);
+		}
+
+		const user = await UserRepository().userInformation(payload.sub);
+		if (!user) {
+			await this.cacheService.revokeSession(payload.sub);
+			throw new UnauthorizedException(
+				this.i18n.t("message.auth.invalid_refresh_token"),
+			);
+		}
+
+		return await this.issueTokens(user.id);
+	}
+
+	private async issueTokens(userId: string): Promise<{
+		accessToken: string;
+		refreshToken: string;
+	}> {
+		const jti = StrUtils.random(32);
+		const refreshToken = JWTUtils.generateRefreshToken({ sub: userId, jti });
+		const expiresAt = JWTUtils.decodeToken(refreshToken)?.exp ?? 0;
+		const ttl = Math.max(expiresAt - Math.floor(Date.now() / 1000), 1);
+		await this.cacheService.set(RefreshTokenCache(userId), jti, ttl);
+
+		return {
+			accessToken: JWTUtils.generateAccessToken({ sub: userId }),
 			refreshToken,
 		};
 	}
@@ -348,5 +413,7 @@ export class AuthService {
 				data: { usedAt: DateUtils.now().toDate() },
 			});
 		});
+
+		await this.cacheService.revokeSession(resetPassword.userId);
 	}
 }

@@ -20,47 +20,26 @@ All exceptions come from `@nestjs/common`. Never throw a raw `Error`.
 `handleError` special-cases `UnprocessableEntityException` so its `{ message, error }` payload
 reaches the client; every other `HttpException` contributes its status and message.
 
-## The four error shapes
+## One error shape
 
-A client receives one of four shapes, depending on **where** the failure happened. Only one of them
-is the house envelope, and `error` is not the same type across them.
-
-**Thrown by a service or guard** — goes through `handleError`, gets the house envelope:
+Every error a client receives uses the house envelope, and `error`, when present, is always a field
+map:
 
 ```jsonc
 { "code": 422, "success": false, "message": "Email already exists",
    "data": null, "error": { "email": ["Email already exists"] } }
 ```
 
-**Rejected by DTO validation** — the global `CustomValidationPipe` runs *before* the controller
-method, so the `try/catch` never sees it and Nest's default filter serialises the payload directly:
+Controllers call `handleError` in their own `catch`. Anything thrown before the controller method
+runs — a guard (401, 403, 429), the global `CustomValidationPipe` (422 with the field map),
+`UuidParamPipe` on an `:id` param (422 on `error.id`), or the router (404 for an unmatched non-GET
+route) — is caught by the global `AllExceptionsFilter`
+(`libs/common/src/filters/all-exceptions.filter.ts`, registered in `main.ts`), which runs the same
+`handleError`.
 
-```jsonc
-{ "statusCode": 422, "message": "property foo should not exist",
-   "data": null, "error": { "foo": ["..."] } }
-```
-
-Note `statusCode` rather than `code`, and **no `success` field**.
-
-**Thrown by a guard** (401, 403) — guards also run before the controller:
-
-```jsonc
-{ "message": "Insufficient permissions", "error": "Forbidden", "statusCode": 403 }
-```
-
-Here `error` is a **string**, not a field map — reading `error.email` off this is a bug waiting to
-happen.
-
-**An unmatched route** (404) is pure framework:
-
-```jsonc
-{ "message": "Not Found", "statusCode": 404 }
-```
-
-The common cause: `handleError` lives in each controller's `catch`, so it can only normalise what the
-controller catches. Guards, pipes, and the router all throw earlier. Recorded as §P11 in
-[audit-findings.md](./audit-findings.md), where the fix is a global exception filter rather than a
-patch to any one of these. Until then, branch on the HTTP status rather than the body shape.
+One exception remains: an **unmatched GET** is answered by `ServeStaticModule`'s catch-all route,
+which sits outside Nest's pipeline and returns `{ "message": "Not Found", "statusCode": 404 }`.
+Mounting the static files under a `serveRoot` would close this, at the cost of changing their URLs.
 
 ## Which exception to use
 

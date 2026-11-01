@@ -64,6 +64,12 @@ first:
   resolves roles and permissions from `user:<id>` in Redis. The user update / delete / status paths
   drop the caller's entry, and the role update / delete paths drop the entry of **every holder** of
   that role. Skipping it leaves a revoked role in force until the entry expires.
+- **Refresh tokens are revocable through one stored id per user.** Login and `/auth/refresh` store
+  the refresh token's `jti` at `refresh_token:<id>`; refresh rejects a token whose `jti` does not
+  match and rotates it. Own password change, password reset, admin password reset, user delete, and
+  any update or status change that leaves the user not active call `CacheService.revokeSession(id)`.
+  A new path that changes credentials or ends an account must call it too, or the old refresh token
+  keeps minting access tokens until it expires.
 - **Cache TTLs are seconds at the call site and milliseconds at the store.** `CacheService.set` takes
   seconds and multiplies; `CacheModule` does the same for its default. Passing a seconds value
   straight to `cache-manager` expires it 1000x too early.

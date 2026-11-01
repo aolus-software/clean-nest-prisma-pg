@@ -2,6 +2,7 @@ import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Inject, Injectable } from "@nestjs/common";
 import { Cache } from "cache-manager";
 import { getEnv } from "@config";
+import { RefreshTokenCache, UserCache } from "./const";
 
 @Injectable()
 export class CacheService {
@@ -23,5 +24,14 @@ export class CacheService {
 
 	async del(key: string): Promise<void> {
 		await this._cacheManager.del(key);
+	}
+
+	/* Drops the cached user and the stored refresh-token id, so the next request
+	   re-reads the account and every outstanding refresh token is rejected. */
+	async revokeSession(userId: string): Promise<void> {
+		await Promise.all([
+			this.del(UserCache(userId)),
+			this.del(RefreshTokenCache(userId)),
+		]);
 	}
 }

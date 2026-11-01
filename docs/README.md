@@ -7,7 +7,7 @@ code, the code is right and the guide is a bug (see `.claude/rules/documentation
 | ----- | -------------- |
 | [CONFIGURATION.md](./CONFIGURATION.md) | Every environment variable, its default, and what reads it |
 | [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) | The response envelope, authentication, the full route map, and list-query parameters |
-| [ERROR_HANDLING.md](./ERROR_HANDLING.md) | Which exception maps to which status, and the two error shapes a client can receive |
+| [ERROR_HANDLING.md](./ERROR_HANDLING.md) | Which exception maps to which status, and the single error envelope a client receives |
 | [SECURITY.md](./SECURITY.md) | Authentication, RBAC, rate limiting, CORS and headers, password and token handling |
 | [DEPLOYMENT.md](./DEPLOYMENT.md) | The PM2 model, the deploy targets, and what each one runs |
 | [SHARED_LIBRARIES.md](./SHARED_LIBRARIES.md) | What lives in `@common`, `@config`, `@repositories`, `@utils` |

@@ -24,6 +24,13 @@ export class AuthStrategy extends PassportStrategy(Strategy, "jwt") {
 	}
 
 	async validate(payload: JWTPayload): Promise<UserInformation> {
+		if (payload.type !== "access") {
+			throw new UnauthorizedException(
+				I18nContext.current()?.t("message.auth.invalid_access_token") ??
+					"Invalid access token",
+			);
+		}
+
 		let user: UserInformation | null | undefined =
 			await this._cacheService.get<UserInformation>(UserCache(payload.sub));
 		if (!user) {

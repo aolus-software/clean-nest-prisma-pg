@@ -14,6 +14,7 @@ import { EmailVerificationDto } from "./dto/email-verification.dto";
 import { ForgotPasswordDto } from "./dto/forgot-password.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { ResetPasswordTokenValidationDto } from "./dto/reset-password-token-validation.dto";
+import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { FastifyReply } from "fastify";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { ApiSuccessResponse } from "@common";
@@ -105,6 +106,40 @@ export class AuthController {
 					accessToken: string;
 					refreshToken: string;
 				}>(200, this.i18n.t("message.auth.login_success"), result),
+			);
+		} catch (error) {
+			ResponseHandler.handleError(res, error);
+		}
+	}
+
+	@Public()
+	@Post("/refresh")
+	@ApiSuccessResponse(
+		200,
+		"Token refreshed successfully",
+		{
+			accessToken: "access-token",
+			refreshToken: "refresh-token",
+		},
+		{
+			type: "object",
+			properties: {
+				accessToken: { type: "string", example: "access-token" },
+				refreshToken: { type: "string", example: "refresh-token" },
+			},
+		},
+	)
+	@ApiStandardResponses({
+		forbidden: false,
+	})
+	async refresh(@Body() data: RefreshTokenDto, @Res() res: FastifyReply) {
+		try {
+			const result = await this.authService.refresh(data);
+			return res.status(200).send(
+				ResponseHandler.success<{
+					accessToken: string;
+					refreshToken: string;
+				}>(200, this.i18n.t("message.auth.refresh_success"), result),
 			);
 		} catch (error) {
 			ResponseHandler.handleError(res, error);

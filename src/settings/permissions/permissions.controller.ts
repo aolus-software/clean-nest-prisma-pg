@@ -21,6 +21,7 @@ import {
 	PaginationResponse,
 	ResponseHandler,
 	RoleAuth,
+	UuidParamPipe,
 } from "@common";
 import { PermissionList } from "@repositories";
 import { defaultSort, paginationLength } from "@utils";
@@ -189,7 +190,10 @@ export class PermissionsController {
 	@ApiStandardResponses({
 		validation: false,
 	})
-	async findOne(@Param("id") id: string, @Res() res: FastifyReply) {
+	async findOne(
+		@Param("id", UuidParamPipe) id: string,
+		@Res() res: FastifyReply,
+	) {
 		try {
 			const data = await this.permissionsService.findOne(id);
 			return res
@@ -213,7 +217,7 @@ export class PermissionsController {
 	@DefaultApiNotFoundResponse("Permission")
 	@ApiStandardResponses()
 	async update(
-		@Param("id") id: string,
+		@Param("id", UuidParamPipe) id: string,
 		@Body() updatePermissionDto: UpdatePermissionDto,
 		@Res() res: FastifyReply,
 	) {
@@ -241,7 +245,10 @@ export class PermissionsController {
 	@ApiStandardResponses({
 		validation: false,
 	})
-	async remove(@Param("id") id: string, @Res() res: FastifyReply) {
+	async remove(
+		@Param("id", UuidParamPipe) id: string,
+		@Res() res: FastifyReply,
+	) {
 		try {
 			await this.permissionsService.remove(id);
 			return res
