@@ -1109,7 +1109,14 @@ depth. Minutes.
   silently without creating anything, which is its own kind of misleading.
 - **`HashUtils` is correct.** bcrypt with a cost of 10.
 
-## §P11 Four different error envelopes ship, and `error` changes type between them — 🟠 inconsistency — CONFIRMED
+## §P11 Four different error envelopes ship, and `error` changes type between them — 🟠 inconsistency — CONFIRMED — ✅ RESOLVED 2026-11-01
+
+> **Resolved 2026-11-01 (partial), branch `fix/sync-base-defects`.** A global `AllExceptionsFilter`
+> (`libs/common/src/filters/all-exceptions.filter.ts`, registered in `main.ts`) now runs
+> `ResponseHandler.handleError` over guard, pipe and router errors, and `CustomValidationPipe` no
+> longer adds `statusCode`. Still open: an unmatched GET is answered by the `ServeStaticModule`
+> catch-all outside Nest and keeps `{ message, statusCode }`; fixing it means a `serveRoot` for
+> static files. Original finding follows.
 
 > Found while writing `docs/API_DOCUMENTATION.md` (item 12b) — the guide could not describe "the
 > error envelope" truthfully, because there are two.

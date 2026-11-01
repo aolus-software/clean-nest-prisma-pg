@@ -4,6 +4,7 @@ import { AppController } from "./app.controller";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { join } from "path";
 import { AuthModule } from "./auth/auth.module";
+import { ProfileModule } from "./profile/profile.module";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
 import * as jwt from "jsonwebtoken";
@@ -37,6 +38,7 @@ import { getEnv } from "@config";
 		ThrottlerModule,
 
 		AuthModule,
+		ProfileModule,
 		HealthModule,
 		SettingsModule,
 	],

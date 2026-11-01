@@ -8,6 +8,20 @@ JWT bearer tokens, verified by Passport (`libs/common/src/strategies/auth.strate
 
 - `POST /auth/login` issues an access token (`JWT_EXPIRES_IN`, default `1d`) and a refresh token
   (`JWT_REFRESH_EXPIRES_IN`, default `7d`), signed with `JWT_SECRET` / `JWT_REFRESH_SECRET`.
+- Each token carries a `type` claim (`access` or `refresh`). The Passport strategy rejects anything
+  that is not an access token, and `POST /auth/refresh` accepts only a refresh token, so one can never
+  stand in for the other.
+- Every refresh token carries a random `jti`. Login and refresh store it in Redis under
+  `refresh_token:<id>` (TTL = the token's remaining lifetime), one id per user, so issuing a new pair
+  replaces the previous one.
+- `POST /auth/refresh` verifies the refresh token, rejects it with 401 unless its `jti` matches the
+  stored one, re-reads the user from the database (a deactivated or deleted user gets 401), and issues
+  a new access + refresh pair. The presented refresh token is rotated out and cannot be used again.
+- `CacheService.revokeSession(id)` deletes `refresh_token:<id>` and `user:<id>`. It runs on own
+  password change, password reset, admin password reset, user delete, and any update or status
+  change that leaves the user not active, so every outstanding refresh token is rejected. An access
+  token already issued stays valid until it expires (`JWT_EXPIRES_IN`), but the strategy re-reads the
+  user, so a deleted or suspended user is refused on the next request.
 - Both secrets are **required** — envalid stops the process at boot if either is missing, and there
   is no hardcoded fallback.
 - On each request the strategy resolves the caller's identity — roles plus a flattened permission
@@ -16,7 +30,7 @@ JWT bearer tokens, verified by Passport (`libs/common/src/strategies/auth.strate
   email, so a deleted, suspended, or unverified user cannot authenticate even with a valid token.
 
 **The cache is invalidated wherever authorization changes** — the user update, delete, and status
-paths drop the caller's entry, and the role update and delete paths drop the entry of *every* user
+paths drop the caller's entry (and revoke the session when the user is no longer active), and the role update and delete paths drop the entry of *every* user
 holding that role. Without that, a revoked role would stay in force until the entry expired.
 
 ## Authorization
@@ -56,7 +70,12 @@ anyone holding an edit permission take over any account.
 - Hashed with bcrypt at cost 10 (`HashUtils`). Never stored or logged in the clear.
 - Strength is enforced at the DTO boundary with `@IsStrongPassword()` — by default at least eight
   characters with lowercase, uppercase, a digit, and a symbol.
-- The password hash is selected only on the login path; every other read omits the column.
+- The password hash is selected only on the login and change-password paths; every other read omits
+  the column.
+- `PATCH /profile/password` lets a signed-in user change their own password. It requires the current
+  password (a wrong one is a 422 on `currentPassword`), applies the same strength rule as register,
+  and revokes the session: the stored refresh-token id and the cached `UserInformation` are deleted,
+  so every refresh token issued before the change is rejected.
 
 ## Account enumeration
 
@@ -109,5 +128,5 @@ deployment, staging included.
 ## Known gaps
 
 Read [audit-findings.md](./audit-findings.md) before relying on anything here. Open items at the time
-of writing include a permission created through the API being unusable by a guard (§P1), and the
-error-envelope inconsistency in §P11.
+of writing include a permission created through the API being unusable by a guard (§P1). The
+error-envelope inconsistency in §P11 is resolved except for unmatched GET routes.

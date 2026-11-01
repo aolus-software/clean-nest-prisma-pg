@@ -2,6 +2,7 @@ import "dotenv/config";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { CustomValidationPipe } from "@common/pipes/custom-validation/custom-validation.pipe";
+import { AllExceptionsFilter } from "@common/filters/all-exceptions.filter";
 import {
 	FastifyAdapter,
 	NestFastifyApplication,
@@ -19,6 +20,7 @@ async function bootstrap() {
 
 	// app global pipes
 	app.useGlobalPipes(new CustomValidationPipe());
+	app.useGlobalFilters(new AllExceptionsFilter());
 
 	// Swagger Configuration=====================
 	if (getEnv().API_DOCS_ENABLED) {

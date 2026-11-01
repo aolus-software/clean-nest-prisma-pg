@@ -67,7 +67,7 @@ Import `defaultSort` and `paginationLength` from `@utils`; `DatatableType`, `Sor
 @PermissionAuth("user:view")
 @ApiStandardResponses({ validation: false })
 @DefaultApiNotFoundResponse()
-async findOne(@Param("id") id: string, @Res() res: FastifyReply) {
+async findOne(@Param("id", UuidParamPipe) id: string, @Res() res: FastifyReply) {
 	try {
 		const user = await this.usersService.findOne(id);
 		return res

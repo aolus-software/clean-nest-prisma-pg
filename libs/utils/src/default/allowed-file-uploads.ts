@@ -3,7 +3,6 @@ export const allowedImageMimeTypes = [
 	"image/png",
 	"image/jpg",
 	"image/gif",
-	"image/svg+xml",
 ];
 
 export const allowedFileMimeTypes = [

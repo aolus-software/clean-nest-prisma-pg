@@ -1,5 +1,8 @@
 import { Global, Module } from "@nestjs/common";
-import { CacheModule as NestCacheManager } from "@nestjs/cache-manager";
+import {
+	type CacheManagerOptions,
+	CacheModule as NestCacheManager,
+} from "@nestjs/cache-manager";
 import KeyvRedis from "@keyv/redis";
 import Keyv from "keyv";
 import { CacheService } from "./cache.service";
@@ -18,18 +21,29 @@ const redisUrl = (): string => {
 	return `redis://${credentials}${getEnv().REDIS_HOST}:${getEnv().REDIS_PORT}`;
 };
 
+/* @nestjs/cache-manager is an ES module, so its option types can see keyv's
+   ESM declarations while this file sees the CJS ones — or the reverse under
+   ts-node, which the seeder runs through. Both describe the same runtime
+   class, so the store is typed from cache-manager's own options type, which
+   matches under either module resolution. */
+type CacheStore = Extract<
+	NonNullable<CacheManagerOptions["stores"]>,
+	unknown[]
+>[number];
+
+const redisStore = (): CacheStore =>
+	new Keyv({
+		store: new KeyvRedis(redisUrl()),
+		namespace: undefined,
+		useKeyPrefix: false,
+	}) as unknown as CacheStore;
+
 @Global()
 @Module({
 	imports: [
 		NestCacheManager.registerAsync({
 			useFactory: () => ({
-				stores: [
-					new Keyv({
-						store: new KeyvRedis(redisUrl()),
-						namespace: undefined,
-						useKeyPrefix: false,
-					}),
-				],
+				stores: [redisStore()],
 				ttl: getEnv().REDIS_TTL * 1000,
 			}),
 		}),

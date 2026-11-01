@@ -21,6 +21,7 @@ import {
 	PaginationResponse,
 	PermissionAuth,
 	ResponseHandler,
+	UuidParamPipe,
 } from "@common";
 import { defaultSort, paginationLength } from "@utils";
 import { RoleDetail, RoleList } from "@repositories";
@@ -179,7 +180,10 @@ export class RolesController {
 		validation: false,
 	})
 	@DefaultApiNotFoundResponse()
-	async findOne(@Param("id") id: string, @Res() res: FastifyReply) {
+	async findOne(
+		@Param("id", UuidParamPipe) id: string,
+		@Res() res: FastifyReply,
+	) {
 		try {
 			const result = await this.rolesService.findOne(id);
 			return res
@@ -204,7 +208,7 @@ export class RolesController {
 	@ApiStandardResponses()
 	@DefaultApiNotFoundResponse()
 	async update(
-		@Param("id") id: string,
+		@Param("id", UuidParamPipe) id: string,
 		@Body() updateRoleDto: UpdateRoleDto,
 		@Res() res: FastifyReply,
 	) {
@@ -233,7 +237,10 @@ export class RolesController {
 		validation: false,
 	})
 	@DefaultApiNotFoundResponse()
-	async remove(@Param("id") id: string, @Res() res: FastifyReply) {
+	async remove(
+		@Param("id", UuidParamPipe) id: string,
+		@Res() res: FastifyReply,
+	) {
 		try {
 			await this.rolesService.remove(id);
 			return res

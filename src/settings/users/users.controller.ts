@@ -22,6 +22,7 @@ import {
 	PermissionAuth,
 	ResponseHandler,
 	RoleAuth,
+	UuidParamPipe,
 } from "@common";
 import { defaultSort, paginationLength } from "@utils";
 import { UpdateStatusDto } from "./dto/update-status.dto";
@@ -87,7 +88,10 @@ export class UsersController {
 			data: null,
 		},
 	})
-	async resendVerifyEmail(@Param("id") id: string, @Res() res: FastifyReply) {
+	async resendVerifyEmail(
+		@Param("id", UuidParamPipe) id: string,
+		@Res() res: FastifyReply,
+	) {
 		try {
 			await this.usersService.resendVerificationEmail(id);
 			return res
@@ -179,7 +183,10 @@ export class UsersController {
 		roles: ["admin"],
 	})
 	@DefaultApiNotFoundResponse()
-	async findOne(@Param("id") id: string, @Res() res: FastifyReply) {
+	async findOne(
+		@Param("id", UuidParamPipe) id: string,
+		@Res() res: FastifyReply,
+	) {
 		try {
 			const user = await this.usersService.findOne(id);
 			return res
@@ -204,7 +211,7 @@ export class UsersController {
 	})
 	@DefaultApiNotFoundResponse()
 	async update(
-		@Param("id") id: string,
+		@Param("id", UuidParamPipe) id: string,
 		@Body() updateUserDto: UpdateUserDto,
 		@Res() res: FastifyReply,
 	) {
@@ -232,7 +239,7 @@ export class UsersController {
 	})
 	@DefaultApiNotFoundResponse()
 	async updateStatus(
-		@Param("id") id: string,
+		@Param("id", UuidParamPipe) id: string,
 		@Body() updateStatusDto: UpdateStatusDto,
 		@Res() res: FastifyReply,
 	) {
@@ -260,7 +267,7 @@ export class UsersController {
 	})
 	@DefaultApiNotFoundResponse()
 	async updatePassword(
-		@Param("id") id: string,
+		@Param("id", UuidParamPipe) id: string,
 		@Body() updatePasswordDto: UpdatePasswordDto,
 		@Res() res: FastifyReply,
 	) {
@@ -289,7 +296,10 @@ export class UsersController {
 		type: "null",
 	})
 	@DefaultApiNotFoundResponse()
-	async remove(@Param("id") id: string, @Res() res: FastifyReply) {
+	async remove(
+		@Param("id", UuidParamPipe) id: string,
+		@Res() res: FastifyReply,
+	) {
 		try {
 			await this.usersService.remove(id);
 			return res

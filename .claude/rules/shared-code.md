@@ -16,7 +16,8 @@ NestJS-aware shared building blocks:
 | Guards | `AuthGuard`, `RoleGuard`, `PermissionGuard` | `guards/<name>/` |
 | Passport strategies | `auth.strategy` | `strategies/` |
 | Param/method decorators | `CurrentUser`, `RoleAuth`, `PermissionAuth`, `ApiStandardResponses`, `ApiSuccessResponse`, `DefaultApiNotFoundResponse`, `ApiDatatableQueries` | `decorators/<name>/` |
-| Pipes | `CustomValidationPipe`, `FilterValidationPipe` | `pipes/<name>/` |
+| Pipes | `CustomValidationPipe`, `FilterValidationPipe`, `UuidParamPipe` | `pipes/<name>/` |
+| Exception filters | `AllExceptionsFilter` (global, registered in `main.ts`) | `filters/` |
 | Interceptors | file-upload | `interceptors/<name>/` |
 | Response helpers | `ResponseHandler`, `successResponse` | `response/` |
 | Cache / mail / throttler | `CacheService`, `MailService` + `MailModule`, throttler module | `cache/`, `mail/`, `throttler/` |

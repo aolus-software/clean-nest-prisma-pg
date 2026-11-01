@@ -22,30 +22,10 @@ Every response built by `ResponseHandler` carries the same four keys:
 The status is in the **body** as `code` as well as on the HTTP response, and the field map key is
 `error`, singular.
 
-> **Errors do not all use that envelope, and this is worth coding against.** Anything thrown before
-> the controller method is entered — by a guard, by the validation pipe, or by the router — never
-> reaches `ResponseHandler`. Four shapes exist today:
->
-> ```jsonc
-> // 401 / 403 from a guard — note `error` is a STRING here
-> { "message": "Insufficient permissions", "error": "Forbidden", "statusCode": 403 }
->
-> // 422 from DTO validation — `error` is a field map, but there is no `code` or `success`
-> { "statusCode": 422, "message": "The email field must be a valid email address.",
->   "data": null, "error": { "email": ["..."] } }
->
-> // 400 / 404 / 422 from a service — the full house envelope
-> { "code": 422, "success": false, "message": "Invalid email or password",
->   "data": null, "error": { "email": ["..."] } }
->
-> // 404 for an unmatched route
-> { "message": "Not Found", "statusCode": 404 }
-> ```
->
-> Practical advice until this is unified: **branch on the HTTP status, not on the body.** Read the
-> status from `code ?? statusCode`, treat a missing `success` as a failure, and check `typeof
-> body.error === "object"` before reading a field map off it. Recorded as §P11 in
-> [audit-findings.md](./audit-findings.md) — a known defect, not a design.
+> **Every error uses that envelope**, including guard 401/403, DTO validation 422 and a malformed
+> `:id` (422 on `error.id`): a global exception filter routes them through `ResponseHandler`. The one
+> exception is an unmatched **GET**, answered by the static-file catch-all as
+> `{ "message": "Not Found", "statusCode": 404 }`. See [ERROR_HANDLING.md](./ERROR_HANDLING.md).
 
 ## Paginated responses
 
@@ -65,7 +45,12 @@ Authorization: Bearer <accessToken>
 ```
 
 `POST /auth/login` returns `accessToken` and `refreshToken`. Access tokens last `JWT_EXPIRES_IN`
-(default one day). **Every route requires a token unless it is listed as public below** — the guards
+(default one day). `POST /auth/refresh` with `{ "refreshToken": "..." }` returns a new
+`{ accessToken, refreshToken }` pair and invalidates the presented refresh token (each one works
+once; logging in again also replaces it). An invalid, expired, wrong-type, already-used, or revoked
+token, or a user who is no longer active, gets **401**. Password change, password reset, admin password
+reset, user delete, and suspension revoke the outstanding refresh token.
+**Every route requires a token unless it is listed as public below** — the guards
 are global, so a route is authenticated by default.
 
 Two failure modes worth distinguishing: **401** means the token is missing, malformed, expired, or
@@ -126,6 +111,7 @@ GET    /health                                PUBLIC    database + heap check
 GET    /health/live                           PUBLIC    liveness probe
 
 POST   /auth/login                            PUBLIC
+POST   /auth/refresh                          PUBLIC    refresh token -> new token pair
 POST   /auth/register                         PUBLIC
 POST   /auth/resend-verification-email        PUBLIC
 POST   /auth/verify-email                     PUBLIC
@@ -133,6 +119,7 @@ POST   /auth/forgot-password                  PUBLIC
 POST   /auth/validate-reset-password-token    PUBLIC
 POST   /auth/reset-password                   PUBLIC
 GET    /auth/profile                          (own identity)
+PATCH  /profile/password                      (own identity)  currentPassword, newPassword
 
 POST   /settings/users                        user:create
 GET    /settings/users                        user:list

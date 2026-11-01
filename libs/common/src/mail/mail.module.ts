@@ -26,6 +26,11 @@ import { getEnv } from "@config";
 					defaults: {
 						from: env.MAIL_FROM,
 					},
+					/* The BullMQ job below already retries a failed send with
+					   backoff. Mailer v4 also retries by default, which would
+					   multiply attempts per job, so the queue stays the one
+					   retry layer. */
+					retry: false,
 
 					template: {
 						dir: join(

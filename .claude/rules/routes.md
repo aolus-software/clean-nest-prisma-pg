@@ -5,12 +5,14 @@ paths:
 
 # Route Structure Rules
 
-## Convention: flat, resource-named, no prefix
+## Convention: flat, resource-named, settings under `/settings`
 
 There is **no global prefix and no URL versioning** — `main.ts` calls neither `setGlobalPrefix` nor
 `enableVersioning`. A controller's path is its resource name, plural, kebab-case: `@Controller("users")`,
-`@Controller("roles")`, `@Controller("permissions")`. Nesting in the filesystem (`src/settings/users/`)
-groups the module and drives the Swagger tag; it does **not** add a URL segment.
+`@Controller("roles")`, `@Controller("permissions")`. The settings controllers are mounted under
+`/settings` by `RouterModule.register` in `src/settings/settings.module.ts`, so their live paths are
+`/settings/users`, `/settings/roles`, and `/settings/permissions`. A new settings module is added to that
+`RouterModule.register` list; any other module gets no URL segment from its folder.
 
 Access is enforced by **decorators on the controller class and its methods**, never by the path. A
 path prefix is not a security boundary here.
@@ -26,7 +28,7 @@ path prefix is not a security boundary here.
 | delete | `DELETE /<resource>/:id` | 200 |
 
 **Use `PATCH`, never `PUT`.** A sub-resource action gets a trailing segment on the id —
-`PATCH /users/:id/status`, `POST /users/:id/resend-verify-email` — and keeps the parent resource's
+`PATCH /settings/users/:id/status`, `POST /settings/users/:id/resend-verify-email` — and keeps the parent resource's
 permission unless the action genuinely warrants its own.
 
 ## Guarding a controller
@@ -68,8 +70,9 @@ GET    /                                    app health string — @ApiTags("App"
 GET    /health                              @ApiTags("Health") — terminus composite check
 GET    /health/live                         liveness probe
 
-# Auth (/auth) — @ApiTags("Auth"); the six public routes carry @Public(), /profile does not
+# Auth (/auth) — @ApiTags("Auth"); the eight public routes carry @Public(), /profile does not
 POST   /auth/login                          PUBLIC
+POST   /auth/refresh                        PUBLIC
 POST   /auth/register                       PUBLIC
 POST   /auth/resend-verification-email      PUBLIC
 POST   /auth/verify-email                   PUBLIC
@@ -78,29 +81,32 @@ POST   /auth/validate-reset-password-token  PUBLIC
 POST   /auth/reset-password                 PUBLIC
 GET    /auth/profile                        authenticated — own identity, no @Public()
 
-# Settings / Users (/users) — guards are global; no @UseGuards on the class
-POST   /users                               user:create
-POST   /users/:id/resend-verify-email       user:update
-GET    /users                               user:list
-GET    /users/:id                           user:view
-PATCH  /users/:id                           user:update
-PATCH  /users/:id/status                    user:update
-PATCH  /users/:id/password                  @RoleAuth("superuser")
-DELETE /users/:id                           user:delete
+# Profile (/profile) — @ApiTags("Profile"); own account, authentication alone is the gate
+PATCH  /profile/password                    authenticated — currentPassword, newPassword
 
-# Settings / Roles (/roles) — guards are global; no @UseGuards on the class
-POST   /roles                               role:create
-GET    /roles                               role:list
-GET    /roles/:id                           role:view
-PATCH  /roles/:id                           role:update
-DELETE /roles/:id                           role:delete
+# Settings / Users (/settings/users) — guards are global; no @UseGuards on the class
+POST   /settings/users                      user:create
+POST   /settings/users/:id/resend-verify-email user:update
+GET    /settings/users                      user:list
+GET    /settings/users/:id                  user:view
+PATCH  /settings/users/:id                  user:update
+PATCH  /settings/users/:id/status           user:update
+PATCH  /settings/users/:id/password         @RoleAuth("superuser")
+DELETE /settings/users/:id                  user:delete
 
-# Settings / Permissions (/permissions) — @RoleAuth("superuser") on the class, now actually enforced
-POST   /permissions                         superuser
-GET    /permissions                         superuser
-GET    /permissions/:id                     superuser
-PATCH  /permissions/:id                     superuser
-DELETE /permissions/:id                     superuser
+# Settings / Roles (/settings/roles) — guards are global; no @UseGuards on the class
+POST   /settings/roles                      role:create
+GET    /settings/roles                      role:list
+GET    /settings/roles/:id                  role:view
+PATCH  /settings/roles/:id                  role:update
+DELETE /settings/roles/:id                  role:delete
+
+# Settings / Permissions (/settings/permissions) — @RoleAuth("superuser") on the class, now actually enforced
+POST   /settings/permissions                superuser
+GET    /settings/permissions                superuser
+GET    /settings/permissions/:id            superuser
+PATCH  /settings/permissions/:id            superuser
+DELETE /settings/permissions/:id            superuser
 ```
 
 **Keep this map current.** Adding, renaming, or re-gating a route updates this table in the same

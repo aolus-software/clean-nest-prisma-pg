@@ -19,6 +19,8 @@ export * from "./mail/mail.module";
 export * from "./mail/mail.service";
 export * from "./pipes/custom-validation/custom-validation.pipe";
 export * from "./pipes/filter-validation/filter-validation.pipe";
+export * from "./pipes/uuid-param/uuid-param.pipe";
+export * from "./filters/all-exceptions.filter";
 export * from "./response/response";
 export * from "./strategies/auth.strategy";
 export * from "./throttler/throttler.module";

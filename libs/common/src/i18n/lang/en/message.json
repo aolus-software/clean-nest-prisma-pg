@@ -37,7 +37,12 @@
 		"registration_failed": "Registration failed",
 		"email_already_verified": "Email is already verified",
 		"invalid_verification_token": "Invalid or expired verification token",
-		"invalid_reset_token": "Invalid or expired reset token"
+		"invalid_reset_token": "Invalid or expired reset token",
+		"invalid_access_token": "Invalid or expired access token",
+		"invalid_refresh_token": "Invalid or expired refresh token",
+		"refresh_success": "Token refreshed successfully",
+		"change_password_success": "Password changed successfully",
+		"current_password_invalid": "Current password is incorrect"
 	},
 	"user": {
 		"create_success": "User created successfully",

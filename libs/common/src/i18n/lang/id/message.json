@@ -37,7 +37,12 @@
 		"registration_failed": "Pendaftaran gagal",
 		"email_already_verified": "Email sudah diverifikasi",
 		"invalid_verification_token": "Token verifikasi tidak valid atau telah kedaluwarsa",
-		"invalid_reset_token": "Token atur ulang tidak valid atau telah kedaluwarsa"
+		"invalid_reset_token": "Token atur ulang tidak valid atau telah kedaluwarsa",
+		"invalid_access_token": "Token akses tidak valid atau telah kedaluwarsa",
+		"invalid_refresh_token": "Token penyegaran tidak valid atau telah kedaluwarsa",
+		"refresh_success": "Token berhasil diperbarui",
+		"change_password_success": "Kata sandi berhasil diubah",
+		"current_password_invalid": "Kata sandi saat ini salah"
 	},
 	"user": {
 		"create_success": "Pengguna berhasil dibuat",
