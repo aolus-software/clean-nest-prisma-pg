@@ -7,6 +7,7 @@
 generator client {
   provider = "prisma-client-js"
   moduleFormat = "cjs"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -32,6 +33,7 @@ model User {
   status UserStatus @default(ACTIVE)
 
   @@index([email], name: "idx_user_email")
+  @@unique([email], map: "idx_user_email_live_unique", where: raw("\"deletedAt\" IS NULL"))
   @@index([deletedAt], name: "idx_user_deleted_at")
 
   roles UserRole[]
@@ -49,6 +51,7 @@ model EmailVerification {
   updatedAt DateTime @updatedAt
 
   @@index([token, usedAt])
+  @@index([userId, usedAt], name: "idx_email_verification_user_id_used_at")
   user User @relation(fields: [userId], references: [id])
 }
 
@@ -62,6 +65,7 @@ model ResetPassword {
   updatedAt DateTime @updatedAt
 
   @@index([token, usedAt])
+  @@index([userId, usedAt], name: "idx_reset_password_user_id_used_at")
   user User @relation(fields: [userId], references: [id])
 }
 
@@ -93,6 +97,7 @@ model UserRole {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, roleId], name: "idx_user_role_unique")
+  @@index([roleId], name: "idx_user_role_role_id")
 
   user User @relation(fields: [userId], references: [id])
   role Role @relation(fields: [roleId], references: [id])
@@ -106,6 +111,7 @@ model RolePermission {
   updatedAt    DateTime @updatedAt
 
   @@unique([roleId, permissionId], name: "idx_role_permission_unique")
+  @@index([permissionId], name: "idx_role_permission_permission_id")
   role       Role       @relation(fields: [roleId], references: [id])
   permission Permission @relation(fields: [permissionId], references: [id])
 }

@@ -29,7 +29,14 @@ the `cleanEnv` schema, and the returned object — then `.env.example` and this 
 
 | Variable | Default | Notes |
 | -------- | ------- | ----- |
-| `DATABASE_URL` | **required** | PostgreSQL connection string, consumed by the `prisma` singleton exported from `libs/repositories/src/index.ts` |
+| `DATABASE_URL` | **required** | PostgreSQL connection string, consumed by the `prisma` singleton built in `libs/repositories/src/prisma/prisma.client.ts` |
+| `DB_POOL_MAX` | `10` | pg pool size per process; must be an integer >= 1 or boot fails. PM2 cluster mode multiplies it by the worker count |
+| `DB_POOL_IDLE_TIMEOUT_MS` | `30000` | An idle connection is closed after this long |
+| `DB_POOL_CONNECTION_TIMEOUT_MS` | `5000` | A query waiting for a free connection fails after this long |
+| `DB_LOG_QUERIES` | `false` | Logs each Prisma statement at debug level with its text and duration, never its parameters (they carry password hashes and tokens). `LoggerUtils.debug` prints only when `NODE_ENV` is `development` or `dev` |
+
+`POSTGRES_SLOW_QUERY_MS` (default `100`) is read only by `docker-compose.yml`: the postgres container
+logs every statement slower than that many milliseconds (`log_min_duration_statement`); `-1` disables it.
 
 ## Authentication
 

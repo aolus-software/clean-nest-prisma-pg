@@ -3,6 +3,12 @@ services:
     image: postgres:17
     container_name: postgres_nest_clean
     restart: unless-stopped
+    command:
+      [
+        "postgres",
+        "-c",
+        "log_min_duration_statement=${POSTGRES_SLOW_QUERY_MS:-100}",
+      ]
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres

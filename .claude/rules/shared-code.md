@@ -25,7 +25,7 @@ NestJS-aware shared building blocks:
 
 ## What belongs in `@repositories` (`libs/repositories/src`)
 
-The Prisma data layer: the `prisma` client singleton (built with the `@prisma/adapter-pg` adapter), `PrismaService` (lifecycle provider), and repository factory functions in `repositories/`. The Prisma schema and migrations live at the project root under `prisma/`, not in this lib.
+The Prisma data layer: the `prisma` client singleton (built with the `@prisma/adapter-pg` adapter in `prisma/prisma.client.ts`, the only `new PrismaClient` in the codebase), `PrismaService` (lifecycle provider around that same instance), and repository factory functions in `repositories/`. The Prisma schema and migrations live at the project root under `prisma/`, not in this lib.
 
 ## What belongs in `@utils` (`libs/utils/src`)
 

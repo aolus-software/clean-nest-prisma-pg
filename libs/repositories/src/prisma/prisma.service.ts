@@ -1,31 +1,20 @@
-import "dotenv/config";
-import { PrismaClient } from "@prisma/client";
 import { Injectable, OnModuleInit, OnModuleDestroy } from "@nestjs/common";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { getEnv } from "@config";
+import { prisma } from "./prisma.client";
 
+/* Lifecycle wrapper around the shared `prisma` client: connects it at boot and
+   closes its pool on shutdown. `client` returns that same instance, never a
+   new one, so the process keeps a single connection pool. */
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
-	private adapter = new PrismaPg({
-		connectionString: getEnv().DATABASE_URL,
-	});
-
-	constructor() {
-		if (!getEnv().DATABASE_URL) {
-			throw new Error("DATABASE_URL environment variable is not set.");
-		}
+	async onModuleInit(): Promise<void> {
+		await prisma.$connect();
 	}
 
-	private prisma = new PrismaClient({ adapter: this.adapter });
-	async onModuleInit() {
-		await this.prisma.$connect();
+	async onModuleDestroy(): Promise<void> {
+		await prisma.$disconnect();
 	}
 
-	async onModuleDestroy() {
-		await this.prisma.$disconnect();
-	}
-
-	get client() {
-		return this.prisma;
+	get client(): typeof prisma {
+		return prisma;
 	}
 }
