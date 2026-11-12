@@ -13,6 +13,10 @@ interface IEnvConfig {
 	FRONTEND_URL: string;
 
 	DATABASE_URL: string;
+	DB_POOL_MAX: number;
+	DB_POOL_IDLE_TIMEOUT_MS: number;
+	DB_POOL_CONNECTION_TIMEOUT_MS: number;
+	DB_LOG_QUERIES: boolean;
 
 	JWT_SECRET: string;
 	JWT_REFRESH_SECRET: string;
@@ -69,6 +73,12 @@ export function getEnv(): IEnvConfig {
 		FRONTEND_URL: str({ default: "http://localhost:3000" }),
 
 		DATABASE_URL: str(),
+		/* Per-process pg pool behind the Prisma adapter. PM2 cluster mode opens
+		   one pool per worker, so the server sees workers x DB_POOL_MAX. */
+		DB_POOL_MAX: num({ default: 10 }),
+		DB_POOL_IDLE_TIMEOUT_MS: num({ default: 30000 }),
+		DB_POOL_CONNECTION_TIMEOUT_MS: num({ default: 5000 }),
+		DB_LOG_QUERIES: bool({ default: false }),
 
 		JWT_SECRET: str(),
 		JWT_REFRESH_SECRET: str(),
@@ -98,6 +108,12 @@ export function getEnv(): IEnvConfig {
 		MAIL_DEFAULT_SUBJECT: str({ default: "Clean Nest" }),
 	});
 
+	/* A pool of zero (or a fraction) would let Prisma start and then hang on
+	   the first query, so reject it at boot like any other invalid var. */
+	if (!Number.isInteger(env.DB_POOL_MAX) || env.DB_POOL_MAX < 1) {
+		throw new Error("DB_POOL_MAX must be an integer >= 1");
+	}
+
 	_cachedEnv = {
 		APP_NAME: env.APP_NAME,
 		APP_VERSION: env.APP_VERSION,
@@ -111,6 +127,10 @@ export function getEnv(): IEnvConfig {
 		FRONTEND_URL: env.FRONTEND_URL,
 
 		DATABASE_URL: env.DATABASE_URL,
+		DB_POOL_MAX: env.DB_POOL_MAX,
+		DB_POOL_IDLE_TIMEOUT_MS: env.DB_POOL_IDLE_TIMEOUT_MS,
+		DB_POOL_CONNECTION_TIMEOUT_MS: env.DB_POOL_CONNECTION_TIMEOUT_MS,
+		DB_LOG_QUERIES: env.DB_LOG_QUERIES,
 
 		JWT_SECRET: env.JWT_SECRET,
 		JWT_REFRESH_SECRET: env.JWT_REFRESH_SECRET,

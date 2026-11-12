@@ -31,7 +31,13 @@ enum UserStatus {
 
 ## Relations
 
-Declare both sides of each relation. Join tables (`UserRole`, `RolePermission`) carry the foreign keys with `@relation(fields: [...], references: [...])` and are indexed on the lookup columns.
+Declare both sides of each relation. Join tables (`UserRole`, `RolePermission`) carry the foreign keys with `@relation(fields: [...], references: [...])` and are indexed on the lookup columns. The composite unique leads with `userId` / `roleId`, so the second column has its own index (`idx_user_role_role_id`, `idx_role_permission_permission_id`) for "who holds this role" and "which roles grant this permission".
+
+## Indexes in place
+
+- `idx_user_email_live_unique` — a **partial unique index** on `User.email WHERE "deletedAt" IS NULL`, declared with `@@unique([email], map: ..., where: raw(...))` under the `partialIndexes` preview feature. Live emails are unique at the database level and a soft-deleted user's email is reusable. The services' `UserRepository().findByMail` check still runs first, so the caller gets a 422 rather than a constraint error.
+- `idx_user_email`, `idx_user_deleted_at` on `User`.
+- `idx_email_verification_user_id_used_at`, `idx_reset_password_user_id_used_at` — `(userId, usedAt)` on the token tables, beside the unique `token`.
 
 ## Migrations and generation
 

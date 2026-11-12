@@ -43,7 +43,7 @@ is `undefined` outside a request.
 
 ## `@repositories`
 
-`prisma` is a module-level singleton built from `DATABASE_URL` via `@prisma/adapter-pg` and exported from `libs/repositories/src/index.ts`. A `PrismaService` provider also exists for lifecycle hooks, but the repository layer uses the singleton.
+`prisma` is a module-level singleton built from `DATABASE_URL` and the `DB_POOL_*` settings via `@prisma/adapter-pg` in `libs/repositories/src/prisma/prisma.client.ts`, and re-exported from `libs/repositories/src/index.ts`. `PrismaService` is a lifecycle wrapper around that same instance (its `client` getter returns it), so the process holds one client and one pool. Never construct a second `PrismaClient`.
 
 Repositories are **factory functions**, not injectable classes:
 

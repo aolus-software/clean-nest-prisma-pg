@@ -164,6 +164,11 @@ FRONTEND_URL=http://localhost:3000
 
 # Database
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/app_db?schema=public"
+DB_POOL_MAX=10
+DB_POOL_IDLE_TIMEOUT_MS=30000
+DB_POOL_CONNECTION_TIMEOUT_MS=5000
+DB_LOG_QUERIES=false
+POSTGRES_SLOW_QUERY_MS=100   # docker-compose.yml only
 
 # JWT Authentication
 JWT_SECRET=your_secret_key_here
@@ -203,6 +208,8 @@ All environment variables are validated by envalid in `libs/config/src/env/index
 `NODE_ENV` accepts `development`, `dev`, `staging`, `production`, or `test`. The `dev` and `staging` values exist for the deployed PM2 apps (see [Deployment](#deployment)).
 
 `API_DOCS_ENABLED` is the single switch for the `/docs` API reference and is independent of `NODE_ENV` — set it to `true` on any environment where the schema should be browsable, and leave it unset or `false` everywhere else. It defaults to `false` so an environment that never sets it cannot expose the schema by accident; `.env.example` turns it on for local development.
+
+`DB_POOL_MAX`, `DB_POOL_IDLE_TIMEOUT_MS` and `DB_POOL_CONNECTION_TIMEOUT_MS` size the single pg pool behind the `prisma` client, per process; under PM2 cluster mode keep `workers x DB_POOL_MAX` below the server's `max_connections`. `DB_LOG_QUERIES=true` logs each statement's text and duration (never its parameters) at debug level, which `LoggerUtils` prints only when `NODE_ENV` is `development` or `dev`. `POSTGRES_SLOW_QUERY_MS` is read only by `docker-compose.yml`. See [docs/CONFIGURATION.md](./docs/CONFIGURATION.md#database).
 ### Porting configuration between the sibling templates
 
 This template has three siblings — `clean-nest-drizzle-pg`, `clean-nest-prisma-pg`, `clean-elysia`,
